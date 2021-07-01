@@ -1,0 +1,35 @@
+<h1>{title}</h1>
+
+<p>
+Drawght is a good tool for writing draft documents using datasets without
+logical statements.
+</p>
+
+<p>
+Written by <a href="mailto:{author.email}">{author.name}</a>, created in
+{creation-date}, published in {publishing date} and tagged by {tags#1}.
+</p>
+
+<ul>
+  <li><a href="{author.networks:url}">{author.networks:name}</a></li>
+</ul>
+
+<p>
+Follow the news on <a href="{author.networks#1.url}">{author.networks#1.name}</a>.
+</p>
+
+<p>
+The syntax was inspired by: 
+</p>
+
+<ul>
+  <a href="{references:url}">{references:name}</a>
+</ul>
+
+<p>
+Tags:
+</p>
+
+<ul>
+  <li>{tags} (tagged by {author.name}).</li>
+</ul>

@@ -1,0 +1,19 @@
+# {title}
+
+Drawght is a good tool for writing draft documents using datasets without
+logical statements.
+
+Written by {author.name} <{author.email}>, created in {creation-date},
+published in {publishing date} and tagged by {tags#1}.
+
+- [{author.networks:name}]({author.networks:url})
+
+Follow the news on [{author.networks#1.name}]({author.networks#1.url}).
+
+The syntax was inspired by: 
+
+- [{references:name}]({references:url})
+
+Tags:
+
+- {tags} (tagged by {author.name}).
