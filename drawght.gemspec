@@ -11,6 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.files = %x(git ls-files).split.reject do |out|
     ignore = out =~ /([MR]ake|Gem)file/ || out =~ /^\./
+    ignore = ignore || out =~ /example\..*/
     ignore = ignore || out =~ %r{^doc/api} || out =~ %r{^test/.*}
     ignore
   end
