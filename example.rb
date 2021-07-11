@@ -7,7 +7,7 @@ data = YAML.load(yaml)
 puts "Dataset", yaml
 Dir.glob "*.in" do |file|
   template = File.read(file)
-  drawght = Drawght::Parser.new(template)
+  drawght = Drawght.new(template)
   line = "-" * 78
   puts line
   puts drawght.parse_template("Template '#{file}' ({title})", data)

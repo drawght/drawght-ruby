@@ -1,9 +1,9 @@
 Gem::Specification.new do |spec|
-  spec.name      = "drawght-parser"
+  spec.name      = "drawght"
   spec.summary   = "Drawght parser implementation in Ruby."
   spec.authors   = ["Hallison Batista"]
   spec.email     = "email@hallison.dev.br"
-  spec.homepage  = "https://github.com/drawght/drawght-parser-ruby"
+  spec.homepage  = "https://github.com/drawght/drawght-ruby"
   spec.version   = %x(git describe --tags --abbrev=0)
   spec.date      = %x(git log --format='%as' --max-count=1)
   spec.licenses  = ["MIT"]
@@ -11,6 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.files = %x(git ls-files).split.reject do |out|
     ignore = out =~ /([MR]ake|Gem)file/ || out =~ /^\./
+    ignore = ignore || out =~ /example\..*/
     ignore = ignore || out =~ %r{^doc/api} || out =~ %r{^test/.*}
     ignore
   end
