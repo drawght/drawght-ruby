@@ -5,7 +5,7 @@ describe "drawght" do
   describe "when load template" do
     it "returns compiler" do
       template = "{name} v{version} ({release date}/{start-at})"
-      compiler = Drawght.load template
+      compiler = Drawght.load_template template
 
       expect(compiler).must_be_instance_of Drawght::Compiler
     end

@@ -1,84 +1,142 @@
 # encoding: utf-8
 # frozen_string_literal: true
 
-class Hash
-  def deep_stringify_keys!
-    transform_keys! do |key|
-      if (Hash === value = fetch(key))
-        value.deep_stringify_keys!
-      end
+module Drawght
 
-      key.to_s
-    end
-  end
-end
+class Compiler
+  using Drawght::Extensions
 
-class Drawght::Compiler
-  PREFIX, ATTRIBUTE, QUERY, ITEM, SUFFIX,  = "{", ".", ":", "#", "}"
-  KEY, LIST, INDEX = "(?<key>.*?)", "(?<list>.*?)", "(?<index>.*?)"
-  EOL = /\r?\n/
+  attr_reader :template, :dataset, :result
 
-  KEY_PATTERN = Regexp.new "#{PREFIX}#{KEY}#{SUFFIX}"
-  LIST_PATTERN = Regexp.new "#{PREFIX}#{LIST}#{QUERY}#{KEY}#{SUFFIX}"
-  ITEM_PATTERN = Regexp.new "#{LIST}#{ITEM}#{INDEX}([#{ATTRIBUTE}]#{KEY})?$"
-
-  def initialize(template)
+  def initialize template, dataset = nil
     @template = template
+    @result = template.dup
+    @dataset = dataset.deep_stringify_keys! if dataset
   end
 
-  def compile(data)
-    @data = data.deep_stringify_keys!
-    parse_keys(parse_queries(@template, @data), @data)
+  def compile dataset
+    @dataset ||= dataset.deep_stringify_keys!
+    compile!
+  end
+
+  def compile!
+    convert
+    result
   end
 
   private
 
-  def parse_queries(template, data)
-    template.split(EOL).map do |line|
-      result = line
-      line.scan LIST_PATTERN do |(list, key)|
-        value = value_from_key(list, data)
-        if value && (value.kind_of? Array) && key
-          partial = line.gsub("#{list}#{QUERY}", "")
-          parsed_lines = value.map { |item| parse_template(partial, item) }
-          result = result.gsub(line, parsed_lines.join("\n"))
+  def convert
+    lines = template.lines.map do |line|
+      next line unless line.match? PLACEHOLDERS_PATTERN
+
+      partial = line.dup
+
+      convert_variables_from partial
+
+      convert_attributes_from partial
+
+      convert_listing_from partial
+
+      partial
+    end
+
+    result.replace lines.join
+  end
+
+  def convert_variables_from template
+    if (variables = placeholders_for_variables_from template).any?
+      current_result = variables.reduce template do |partial, key|
+        value = dataset.fetch key
+        [value].flatten.map{ |item| replace_placeholders partial.dup, key, item }.join
+      end
+
+      template.replace current_result
+    end
+  end
+
+  # Get variables placeholders, like `{}`
+  def placeholders_for_variables_from template
+    sentences = sentences_for template
+    sentences.reject! { |key| (key.match? ATTRIBUTES_PATTERN) || (key.match? QUERY) }
+    sentences
+  end
+
+  def sentences_for template
+    template.scan(PLACEHOLDERS_PATTERN).flatten
+  end
+
+  def replace_placeholders template, key, value
+    template.gsub! placeholder_key(key), value.to_s
+  end
+
+  def placeholder_key key
+    "#{PREFIX}#{key}#{SUFFIX}"
+  end
+
+  def convert_attributes_from template
+    if (keypaths = placeholders_for_attributes_from template).any?
+      keypaths.map do |keypath|
+        placeholder = []
+
+        keypath.map! do |attribute|
+          if attribute.match? /\d+/
+            placeholder.last << ITEM << attribute.dup
+            attribute.to_i - 1
+          else
+            placeholder << attribute.dup
+            attribute
+          end
         end
-      end
-      result
-    end.join("\n")
-  end
 
-  def parse_keys(template, data)
-    template.split(EOL).map do |line|
-      parse_template(line, data)
-    end.join("\n"); 
-  end
+        value = dataset.dig *keypath
 
-  def parse_template(template, data)
-    result = template
-    template.scan KEY_PATTERN do |(key)|
-      template_key = "#{PREFIX}#{key}#{SUFFIX}"
-      value = value_from_key(key, data) || template_key
-      if value.kind_of? Array
-        result = value.map { |item| template.gsub(template_key, item) }.join("\n")
-      else
-        result = result.gsub(template_key, value.to_s)
+        next template if value.nil?
+
+        replace_placeholders template, placeholder.join(ATTRIBUTE), value
       end
     end
-    result
   end
 
-  def value_from_key(nested_key, data)
-    item = nested_key.match ITEM_PATTERN
-    if item
-      list, index, key = item.captures
-      index = index && (index.to_i)
-      value = data.dig *list.split(ATTRIBUTE)
-      if value && (value.kind_of? Array) && index
-        key ? value[index - 1][key] : value[index - 1]
-      end
-    else
-      data.dig *nested_key.split(ATTRIBUTE)
+  def placeholders_for_attributes_from line
+    placeholders_for line, ATTRIBUTES_PATTERN
+  end
+
+  def placeholders_for template, delimiter
+    sentences_for(template)
+      .map{ |placeholder| placeholder.split delimiter }
+      .select{ |items| items.size > 1 }
+      .uniq
+  end
+
+  def convert_listing_from template
+    if (keypaths = placeholders_for_listing_from template).any?
+      keypaths
+        .group_by(&:first)
+        .map do |list_key, path_keys|
+          attributes = placeholders_for_attributes_from(placeholder_key list_key).flatten
+          list = attributes.any? ? dataset.dig(*attributes) : dataset.dig(*list_key)
+
+          next [template] unless list.is_a? Array
+
+          result = String.new # Why '' is frozen?
+          list.each do |item|
+            result << template.dup
+            path_keys.each do |_, key|
+              attributes = placeholders_for_attributes_from(placeholder_key key).flatten
+              value = attributes.any? ? item.dig(*attributes) : item[key]
+              replace_placeholders result, "#{list_key}#{QUERY}#{key}", value
+            end
+          end
+
+          template.replace result
+        end
     end
   end
+
+  def placeholders_for_listing_from line
+    placeholders_for line, QUERY
+  end
+end
+
 end
