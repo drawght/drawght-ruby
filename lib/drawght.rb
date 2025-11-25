@@ -7,7 +7,7 @@ module Drawght
     ATTRIBUTE = '.',
     QUERY = ':',
     ITEM = '#',
-    SUFFIX = '}'
+    SUFFIX = '}',
   ]
 
   PLACEHOLDERS_PATTERN = Regexp.new "\\#{PREFIX}([^\\#{SUFFIX}]+)\\#{SUFFIX}"
@@ -47,6 +47,7 @@ module Drawght
     end
   end
 
+  require_relative 'drawght/parser'
   require_relative 'drawght/compiler'
 
   def self.load_template(template)
