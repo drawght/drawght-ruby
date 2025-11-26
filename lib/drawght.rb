@@ -4,10 +4,10 @@
 module Drawght
   TOKENS = [
     PREFIX = '{',
-    ATTRIBUTE = '.',
-    QUERY = ':',
-    ITEM = '#',
     SUFFIX = '}',
+    ATTRIBUTE = '.',
+    ITEM = '#',
+    QUERY = ':',
   ]
 
   PLACEHOLDERS_PATTERN = Regexp.new "\\#{PREFIX}([^\\#{SUFFIX}]+)\\#{SUFFIX}"
@@ -16,6 +16,7 @@ module Drawght
   ATTRIBUTE_PATTERN = Regexp.new "\\#{ATTRIBUTE}"
   ITEM_PATTERN = Regexp.new "\\#{ITEM}"
   QUERY_PATTERN = Regexp.new "\\#{QUERY}"
+
   PATH_PATTERN = Regexp.new "\\#{ATTRIBUTE}|\\#{ITEM}|\\#{QUERY}"
 
   module Extensions
