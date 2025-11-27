@@ -41,20 +41,20 @@ describe 'drawght parser' do
       end
     end
 
-    it 'parses the main list syntax path' do
+    it 'parses the main collection syntax path' do
       (0..9).each do |index|
         expect_path_keys from: "##{index + 1}", must_equal: [index]
         expect_path_keys from: "##{index + 1}.Title", must_equal: [index, 'Title']
       end
     end
 
-    it 'parses the attribute list syntax path' do
+    it 'parses the attribute collection syntax path' do
       (0..9).each do |index|
         expect_path_keys from: "Books##{index + 1}", must_equal: ['Books', index]
       end
     end
 
-    it 'parses the nested list syntax path' do
+    it 'parses the nested collection syntax path' do
       (0..9).each do |index|
         expect_path_keys from: "Books##{index + 1}.Title", must_equal: ['Books', index, 'Title']
       end
