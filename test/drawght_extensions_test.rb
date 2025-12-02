@@ -31,7 +31,9 @@ describe 'drawght extensions' do
       ]
     }
 
-    expect(dataset.deep_stringify_keys!).must_equal result
+    dataset.deep_stringify_keys!
+
+    expect(dataset).must_equal result
   end
 
   it 'adds Hash#ditch' do
@@ -121,5 +123,9 @@ describe 'drawght extensions' do
     list.add 'f'
 
     expect(list.size).must_equal list_size + 1
+  end
+
+  it 'adds String#to_placeholder' do
+    expect('name'.to_placeholder).must_equal '{name}'
   end
 end

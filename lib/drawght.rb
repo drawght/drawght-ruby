@@ -56,6 +56,12 @@ module Drawght
         self
       end
     end
+
+    refine String do
+      def to_placeholder
+        "#{PREFIX}#{self}#{SUFFIX}"
+      end
+    end
   end
 
   require_relative 'drawght/parser'
