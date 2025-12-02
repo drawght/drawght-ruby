@@ -37,13 +37,16 @@ module Drawght
         self
       end
 
-      def dig *pathkeys
+      def ditch *pathkeys
         if i = pathkeys.index('&')
           list, subpath = pathkeys[0..i - 1], pathkeys[i + 1..-1]
-          super(*list).map{ |item| item.dig *subpath }
+          dig(*list).map{ |item| item.ditch *subpath }
         else
-          super *pathkeys
+          dig *pathkeys
         end
+      rescue => error
+        error.message += "The pathkeys \"#{pathkeys.join ','}\" is a not valid path"
+        raise error
       end
     end
 

@@ -34,7 +34,7 @@ describe 'drawght extensions' do
     expect(dataset.deep_stringify_keys!).must_equal result
   end
 
-  it 'adds Hash#dig' do
+  it 'adds Hash#ditch' do
     dataset = {
       'author' => {
         'name' => 'Isaac Asimov',
@@ -68,25 +68,46 @@ describe 'drawght extensions' do
       ]
     }
 
-    expect(dataset.dig 'author', 'name').must_equal 'Isaac Asimov'
-    expect(dataset.dig 'author', 'birhtdate').must_equal '1920-01-02'
+    expect(dataset.ditch 'author', 'name').must_equal 'Isaac Asimov'
+    expect(dataset.ditch 'author', 'birhtdate').must_equal '1920-01-02'
 
     expected = dataset['series'].map{ |serie| serie['name'] }
-    expect(dataset.dig 'series', '&', 'name').must_equal expected
+    expect(dataset.ditch 'series', '&', 'name').must_equal expected
 
-    dataset['series'][0]['books'].each_with_index do |book, index|
-      expect(dataset.dig 'series', 0, 'books', index, 'title').must_equal book['title']
+    dataset.dig('series', 0, 'books').each_with_index do |book, index|
+      expect(dataset.ditch 'series', 0, 'books', index, 'title').must_equal book['title']
     end
 
-    expected = dataset['series'][0]['books'].map{ |book| book['title'] }
+    expected = dataset.dig('series', 0, 'books').map{ |book| book['title'] }
 
-    expect(dataset.dig 'series', 0, 'books', '&', 'title').must_equal expected
+    expect(dataset.ditch 'series', 0, 'books', '&', 'title').must_equal expected
 
     expected = dataset['series'].map do |serie|
       serie['books'].map{ |book| book['title'] }
     end
 
-    expect(dataset.dig 'series', '&', 'books', '&', 'title').must_equal expected
+    expect(dataset.ditch 'series', '&', 'books', '&', 'title').must_equal expected
+
+    dataset = {
+      'series' => {
+        'name' => 'Robot',
+        'books' => [
+          { 'book' => { 'title' => 'The Complete Robot', 'year' => 1982 } },
+          { 'book' => { 'title' => 'The Bicentennial Man', 'year' => 1976 } },
+          { 'book' => { 'title' => 'Mother Earth', 'year' => 1949 } },
+          { 'book' => { 'title' => 'The Caves of Steel', 'year' => 1954 } },
+          { 'book' => { 'title' => 'The Naked Sun', 'year' => 1957 } },
+          { 'book' => { 'title' => 'Mirror Image', 'year' => 1972 } },
+          { 'book' => { 'title' => 'The Robots of Dawn', 'year' => 1983 } },
+          { 'book' => { 'title' => 'Robots and Empire', 'year' => 1985 } },
+        ]
+      }
+    }
+    expected = dataset.dig('series', 'books').map{ |books| books.dig('book', 'title') }
+
+    expect{ dataset.ditch 'series', '&', 'books', '&', 'book', 'title' }.must_raise StandardError
+
+    expect(dataset.ditch 'series', 'books', '&', 'book', 'title').must_equal expected
   end
 
   it 'adds Array#add' do
