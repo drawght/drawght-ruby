@@ -3,17 +3,31 @@
 require 'minitest/autorun'
 require_relative '../lib/drawght'
 
-describe 'drawght parser' do
+class Parser
   include Drawght::Parser
+end
+
+describe 'drawght parser' do
+  def parser
+    @parser ||= Parser.new
+  end
 
   def expect_path_keys(from:, must_equal:)
-    result = path_keys_from from
+    result = parser.path_keys_from from
     expect(result).must_equal must_equal
   end
 
   def expect_placeholders(from:, must_equal:)
-    result = placeholders_from from
+    result = parser.placeholders_from from
     expect(result).must_equal must_equal
+  end
+
+  def expect_placeholders_mapping(from:, must_equal:)
+    parser.mapping_placeholders_from from
+
+    must_equal.each do |navigation, placeholders|
+      expect(parser.send navigation).must_equal placeholders
+    end
   end
 
   describe 'when parses path keys' do
@@ -113,6 +127,75 @@ describe 'drawght parser' do
 
       for (template, expected) in expectations
         expect_placeholders from: template, must_equal: expected
+      end
+    end
+  end
+
+  describe 'when mapping placeholders' do
+    it 'maps all placeholders from text' do
+      # dataset = {
+      #   'Name' => 'Drawght',
+      #   'Changelog' => [
+      #     {
+      #       'Version' => '0.1.0',
+      #       'Release' => '2021-07-11',
+      #       'Summary' => 'Work in progress!',
+      #       'Changes' => [
+      #         'Variables',
+      #         'Objects',
+      #         'Lists',
+      #       ]
+      #     }, {
+      #       'Version' => '0.2.0',
+      #       'Release' => '2024-08-30',
+      #       'Summary' => 'Tests and tests.',
+      #       'Changes' => [
+      #         'Tests for variables',
+      #         'Tests for objects',
+      #         'Tests for lists',
+      #       ],
+      #       'Tests' => {
+      #         'Unit' => [
+      #           { 'Models' => [ 'Person', 'User' ],
+      #           { 'Controllers' => [ 'PersonController', 'UserController', 'AccessController' ] },
+      #         ]
+      #       }
+      #     }
+      #   ]
+      # }
+
+      expectations = {
+        '{Name} v{Changelog#2.Version} ({Changelog#2.Release})' => {
+          straightly_placeholders: [
+            'Name',
+            'Changelog#2.Version',
+            'Changelog#2.Release',
+          ],
+        },
+        '- {Name} v{Changelog:Version} - {Changelog:Release}' => {
+          straightly_placeholders: ['Name'],
+          sequential_placeholders: {
+            'Changelog' => {
+              'Changelog:Version' => 'Version',
+              'Changelog:Release' => 'Release'
+            },
+          }
+        },
+        '- v{Changelog:Version} > {Tests:Unit:Models} {Tests:Unit:Controllers}' => {
+          sequential_placeholders: {
+            'Changelog' => {
+              'Changelog:Version' => 'Version',
+            },
+            'Tests:Unit' => {
+              'Tests:Unit:Models' => 'Models',
+              'Tests:Unit:Controllers' => 'Controllers',
+            },
+          }
+        }
+      }
+
+      for (template, expected) in expectations
+        expect_placeholders_mapping from: template, must_equal: expected
       end
     end
   end

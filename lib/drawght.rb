@@ -46,6 +46,13 @@ module Drawght
         end
       end
     end
+
+    refine Array do
+      def add item
+        push item unless include? item
+        self
+      end
+    end
   end
 
   require_relative 'drawght/parser'

@@ -3,6 +3,8 @@
 
 module Drawght
   module Parser
+    using Extensions
+
     def path_keys_from placeholder
       path = case placeholder
              when ATTRIBUTES_PATTERN then
@@ -20,6 +22,41 @@ module Drawght
       return [] unless string =~ PLACEHOLDERS_PATTERN
 
       string.scan(PLACEHOLDERS_PATTERN).flatten
+    end
+
+    def mapping_placeholders_from string
+      clear_placeholder_mappings!
+
+      placeholders_from(string).map do |placeholder|
+        if placeholder =~ QUERY_PATTERN
+          placeholder.scan %r/^(.*)#{QUERY}(.*)$/ do |pathkeys, attribute|
+            (sequential_placeholders[pathkeys] ||= {}).update placeholder => attribute
+          end
+        else
+          straightly_placeholders.add placeholder
+        end
+
+        placeholder
+      end
+    end
+
+    def straightly_placeholders
+      @straightly_placeholders ||= []
+    end
+
+    def sequential_placeholders
+      @sequential_placeholders ||= {}
+    end
+
+    def replace_placeholders template, value
+      case value
+      when Hash
+        replace_placeholder_attributes_for template, value
+      when Array
+        replace_placeholder_collections_for template, value
+      else
+        replace_placeholder_variables_from template, value
+      end
     end
 
     private
@@ -42,6 +79,10 @@ module Drawght
           item
         end
       end
+    end
+
+    def clear_placeholder_mappings!
+      straightly_placeholders.clear && sequential_placeholders.clear
     end
   end
 end

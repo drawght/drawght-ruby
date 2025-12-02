@@ -88,4 +88,17 @@ describe 'drawght extensions' do
 
     expect(dataset.dig 'series', '&', 'books', '&', 'title').must_equal expected
   end
+
+  it 'adds Array#add' do
+    list = %w[a b c d e]
+
+    for item in list
+      expect(list.add item).must_equal list
+    end
+
+    list_size = list.size
+    list.add 'f'
+
+    expect(list.size).must_equal list_size + 1
+  end
 end
