@@ -57,7 +57,7 @@ describe "drawght compiler" do
       end
     end
 
-    it "converts straightly items in a list" do
+    it "converts straightly items in a collection" do
       template = <<~end_text.lstrip
         Changelog for {Changelog#1.Version} released in {Changelog#1.Release}.
         Changes:
@@ -74,7 +74,7 @@ describe "drawght compiler" do
       expect(compile template, dataset).must_equal expection
     end
 
-    it "converts list of objects" do
+    it "converts collection of objects" do
       template = "- [{references:name}]({references:url})\n"
       result = compile template, {
         references: [
@@ -87,7 +87,7 @@ describe "drawght compiler" do
       expect(result).must_equal expected
     end
 
-    it "converts nested list of objects" do
+    it "converts nested collection of objects" do
       template = <<-end_text.lstrip
         - [{references:language.name}]({references:language.url})
       end_text
