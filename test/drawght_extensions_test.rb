@@ -1,8 +1,5 @@
 # encoding: utf-8
 
-require "minitest/autorun"
-require_relative "../lib/drawght"
-
 describe "drawght extensions" do
   using Drawght::Extensions
 

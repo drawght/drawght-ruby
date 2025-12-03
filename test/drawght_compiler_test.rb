@@ -1,7 +1,8 @@
-require "minitest/autorun"
-require_relative "../lib/drawght"
+# encoding: utf-8
 
 describe "drawght compiler" do
+  require "date"
+
   def compile(template, dataset)
     Drawght::Compiler.new(template).compile dataset
   end

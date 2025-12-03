@@ -1,5 +1,4 @@
-require "minitest/autorun"
-require_relative "../lib/drawght"
+# encoding: utf-8
 
 describe "drawght" do
   describe "when load template" do

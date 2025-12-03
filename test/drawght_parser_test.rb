@@ -1,13 +1,10 @@
 # encoding: utf-8
 
-require "minitest/autorun"
-require_relative "../lib/drawght"
-
-class Parser
-  include Drawght::Parser
-end
-
 describe "drawght parser" do
+  class Parser
+    include Drawght::Parser
+  end
+
   # dataset = {
   #   "Author" => {
   #     "Name" => "Isaac Asimov",
