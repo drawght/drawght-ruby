@@ -66,6 +66,7 @@ module Drawght
 
   require_relative "drawght/parser"
   require_relative "drawght/compiler"
+  require_relative "drawght/version"
 
   def self.load_template(template)
     Compiler.new template

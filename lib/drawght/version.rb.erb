@@ -3,4 +3,8 @@
 module Drawght
   VERSION = "<%=version%>"
   RELEASE_DATE = "<%=date%>"
+  CHANGESET = [
+  <%changes.map do |item|-%>
+  "<%=item-%>",
+  <%end-%>]
 end
