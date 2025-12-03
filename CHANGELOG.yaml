@@ -1,3 +1,13 @@
+- version: 1.0.0
+  release: 2025-12-03
+  summary:
+    The compiler has finished.
+  changes:
+  - New compiler process.
+  - Refined extension methods have been added.
+  - Test coverage.
+  - Syntax revision for nested values in collections.
+
 - version: 0.2.0
   release: 2024-08-30
   summary:
