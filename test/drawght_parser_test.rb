@@ -8,12 +8,45 @@ class Parser
 end
 
 describe 'drawght parser' do
+  # dataset = {
+  #   'Author' => {
+  #     'Name' => 'Isaac Asimov',
+  #     'Birhtdate' => '1920-01-02',
+  #   },
+  #   'Series' => [
+  #     {
+  #       'Name' => 'Foundation',
+  #       'Books' => [
+  #         { 'Title' => 'Foundation', 'Year' => 1951 },
+  #         { 'Title' => 'Foundation and Empire', 'Year' => 1952 },
+  #         { 'Title' => 'Second Foundation', 'Year' => 1953 },
+  #         { 'Title' => 'Foundation\'s Edge', 'Year' => 1982 },
+  #         { 'Title' => 'Foundation and Earth', 'Year' => 1986 },
+  #         { 'Title' => 'Prelude to Foundation', 'Year' => 1988 },
+  #         { 'Title' => 'Forward the Foundation', 'Year' => 1993 },
+  #       ]
+  #     }, {
+  #       'Name' => 'Robot',
+  #       'Books' => [
+  #         { 'Title' => 'The Complete Robot', 'Year' => 1982 },
+  #         { 'Title' => 'The Bicentennial Man', 'Year' => 1976 },
+  #         { 'Title' => 'Mother Earth', 'Year' => 1949 },
+  #         { 'Title' => 'The Caves of Steel', 'Year' => 1954 },
+  #         { 'Title' => 'The Naked Sun', 'Year' => 1957 },
+  #         { 'Title' => 'Mirror Image', 'Year' => 1972 },
+  #         { 'Title' => 'The Robots of Dawn', 'Year' => 1983 },
+  #         { 'Title' => 'Robots and Empire', 'Year' => 1985 },
+  #       ]
+  #     }
+  #   ]
+  # }
+
   def parser
     @parser ||= Parser.new
   end
 
   def expect_path_keys(from:, must_equal:)
-    result = parser.path_keys_from from
+    result = parser.pathkeys_from from
     expect(result).must_equal must_equal
   end
 
@@ -73,32 +106,7 @@ describe 'drawght parser' do
         expect_path_keys from: "Books##{index + 1}.Title", must_equal: ['Books', index, 'Title']
       end
 
-      # dataset = {
-      #   'Books' => [
-      #     { 'Title' => 'One' },
-      #     { 'Title' => 'Two' },
-      #   ]
-      # }
-
       expect_path_keys from: 'Books:Title', must_equal: ['Books', '&', 'Title']
-
-      # dataset = {
-      #   'Series' => [
-      #     {
-      #       'Name' => 'Serie One',
-      #       'Books' => [
-      #         { 'Title' => 'Serie One - Book One' },
-      #         { 'Title' => 'Serie One - Book Two' },
-      #       ]
-      #     }, {
-      #       'Name' => 'Serie Two',
-      #       'Books' => [
-      #         { 'Title' => 'Serie Two - Book One' },
-      #         { 'Title' => 'Serie Two - Book Two' },
-      #       ]
-      #     }
-      #   ]
-      # }
 
       expect_path_keys from: 'Series:Books:Title', must_equal: %w[Series & Books & Title]
 

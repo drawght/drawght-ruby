@@ -5,7 +5,7 @@ module Drawght
   module Parser
     using Extensions
 
-    def path_keys_from placeholder
+    def pathkeys_from placeholder
       path = case placeholder
              when ATTRIBUTES_PATTERN then
                path_keys_for_attribute placeholder
