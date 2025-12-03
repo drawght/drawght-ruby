@@ -47,7 +47,7 @@ class Compiler
       matter = dataset.ditch *pathkeys_from(holding)
 
       converted = [matter].flatten.map do |value|
-        template.dup.gsub! holding.to_placeholder, value
+        template.dup.gsub! holding.to_placeholder, value.to_s
       end
 
       template.replace converted.join
@@ -61,7 +61,7 @@ class Compiler
       converted = matter.map do |values|
         mappings.inject template.dup do |partial, (holding, key)|
           value = values.ditch(*pathkeys_from(key)) || key
-          partial.dup.gsub! holding.to_placeholder, value
+          partial.dup.gsub! holding.to_placeholder, value.to_s
         end
       end
 

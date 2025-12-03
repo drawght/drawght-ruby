@@ -113,5 +113,14 @@ describe "drawght compiler" do
         - [Handlebars](//handlebarsjs.com)
       end_text
     end
+
+    it 'converts dates' do
+      today = Date.today
+      data = {
+        Release: today
+      }
+
+      expect(compile "{Release}", data).must_equal "#{today}"
+    end
   end
 end
