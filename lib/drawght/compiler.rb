@@ -4,7 +4,9 @@
 module Drawght
 
 class Compiler
-  using Drawght::Extensions
+  using Extensions
+
+  include Parser
 
   attr_reader :template, :dataset, :result
 
@@ -30,112 +32,41 @@ class Compiler
     lines = template.lines.map do |line|
       next line unless line.match? PLACEHOLDERS_PATTERN
 
-      partial = line.dup
+      mapping_placeholders_from line
 
-      convert_variables_from partial
+      newline = convert_straightly_placeholders_from line
 
-      convert_attributes_from partial
-
-      convert_listing_from partial
-
-      partial
+      convert_sequential_placeholders_from newline
     end
 
     result.replace lines.join
   end
 
-  def convert_variables_from template
-    if (variables = placeholders_for_variables_from template).any?
-      current_result = variables.reduce template do |partial, key|
-        value = dataset.fetch key
-        [value].flatten.map{ |item| replace_placeholders partial.dup, key, item }.join
+  def convert_straightly_placeholders_from string
+    straightly_placeholders.reduce string.dup do |template, holding|
+      matter = dataset.ditch *pathkeys_from(holding)
+
+      converted = [matter].flatten.map do |value|
+        template.dup.gsub! holding.to_placeholder, value
       end
 
-      template.replace current_result
+      template.replace converted.join
     end
   end
 
-  # Get variables placeholders, like `{}`
-  def placeholders_for_variables_from template
-    sentences = sentences_for template
-    sentences.reject! { |key| (key.match? ATTRIBUTES_PATTERN) || (key.match? QUERY) }
-    sentences
-  end
+  def convert_sequential_placeholders_from string
+    sequential_placeholders.reduce string.dup do |template, (attribute, mappings)|
+      matter = dataset.ditch *pathkeys_from(attribute)
 
-  def sentences_for template
-    template.scan(PLACEHOLDERS_PATTERN).flatten
-  end
-
-  def replace_placeholders template, key, value
-    template.gsub! placeholder_key(key), value.to_s
-  end
-
-  def placeholder_key key
-    "#{PREFIX}#{key}#{SUFFIX}"
-  end
-
-  def convert_attributes_from template
-    if (keypaths = placeholders_for_attributes_from template).any?
-      keypaths.map do |keypath|
-        placeholder = []
-
-        keypath.map! do |attribute|
-          if attribute.match? /\d+/
-            placeholder.last << ITEM << attribute.dup
-            attribute.to_i - 1
-          else
-            placeholder << attribute.dup
-            attribute
-          end
+      converted = matter.map do |values|
+        mappings.inject template.dup do |partial, (holding, key)|
+          value = values.ditch(*pathkeys_from(key)) || key
+          partial.dup.gsub! holding.to_placeholder, value
         end
-
-        value = dataset.dig *keypath
-
-        next template if value.nil?
-
-        replace_placeholders template, placeholder.join(ATTRIBUTE), value
       end
+
+      template.replace converted.join
     end
-  end
-
-  def placeholders_for_attributes_from line
-    placeholders_for line, ATTRIBUTES_PATTERN
-  end
-
-  def placeholders_for template, delimiter
-    sentences_for(template)
-      .map{ |placeholder| placeholder.split delimiter }
-      .select{ |items| items.size > 1 }
-      .uniq
-  end
-
-  def convert_listing_from template
-    if (keypaths = placeholders_for_listing_from template).any?
-      keypaths
-        .group_by(&:first)
-        .map do |list_key, path_keys|
-          attributes = placeholders_for_attributes_from(placeholder_key list_key).flatten
-          list = attributes.any? ? dataset.dig(*attributes) : dataset.dig(*list_key)
-
-          next [template] unless list.is_a? Array
-
-          result = String.new # Why '' is frozen?
-          list.each do |item|
-            result << template.dup
-            path_keys.each do |_, key|
-              attributes = placeholders_for_attributes_from(placeholder_key key).flatten
-              value = attributes.any? ? item.dig(*attributes) : item[key]
-              replace_placeholders result, "#{list_key}#{QUERY}#{key}", value
-            end
-          end
-
-          template.replace result
-        end
-    end
-  end
-
-  def placeholders_for_listing_from line
-    placeholders_for line, QUERY
   end
 end
 

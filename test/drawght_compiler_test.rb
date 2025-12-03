@@ -1,74 +1,85 @@
-require 'minitest/autorun'
-require_relative '../lib/drawght'
+require "minitest/autorun"
+require_relative "../lib/drawght"
 
-describe 'drawght compiler' do
+describe "drawght compiler" do
   def compile(template, dataset)
     Drawght::Compiler.new(template).compile dataset
   end
 
-  describe 'when compiling' do
-    it 'converts variables' do
-      template = '{name} v{version} ({release date}/{start-at})'
-      result = compile template, {
-        name: 'Drawght',
-        version: '0.1.0',
-        'release date' => '2021-07-01',
-        'start-at' => '2021-06-30',
-      }
-
-      expect(result).must_equal 'Drawght v0.1.0 (2021-07-01/2021-06-30)'
-    end
-
-    it 'converts hash objects' do
-      template = '{product.name} - {package.name} v{package.version} ({package.release})'
-      result = compile template, {
-        product: {
-          name: 'Drawght',
-        },
-        package: {
-          name: 'drawght-compiler',
-          version: '0.1.0',
-          release: '2021-07-01',
+  describe "when compiling" do
+    dataset = {
+      Name: "Drawght",
+      Version: "0.1.0",
+      "Release Date" => "2021-07-01",
+      "Start-at" => "2021-06-30",
+      Changelog: [
+        {
+          Version: "0.1.0",
+          Release: "2021-07-11",
+          Summary: "Work in progress!",
+          Changes: [
+            "Variables",
+            "Objects",
+            "Lists",
+          ]
+        }, {
+          Version: "0.2.0",
+          Release: "2024-08-30",
+          Summary: "Tests and tests.",
+          Changes: [
+            "Tests for variables",
+            "Tests for objects",
+            "Tests for lists",
+          ]
         }
+      ],
+      Package: {
+        Name: "drawght-compiler",
+        Version: "0.1.0",
+        Release: "2021-07-01"
+      },
+      Tags: [
+        "Text",
+        "Parsing",
+        "Test",
+      ]
+    }
+
+    it "converts variables, attributes and items" do
+      expections = {
+        "{Name} v{Version} ({Release Date}/{Start-at})" => "Drawght v0.1.0 (2021-07-01/2021-06-30)",
+        "{Name} - {Package.Name} v{Package.Version} ({Package.Release})" => "Drawght - drawght-compiler v0.1.0 (2021-07-01)",
+        "- {Tags}\n" => "- Text\n- Parsing\n- Test\n",
       }
 
-      expect(result).must_equal 'Drawght - drawght-compiler v0.1.0 (2021-07-01)'
+      for (template, expected) in expections
+        expect(compile template, dataset).must_equal expected
+      end
     end
 
-    it 'converts list' do
-      template = "- {tags}\n"
-      result = compile template, {
-        tags: %w[Text Test Tagged]
-      }
-      expected = "- Text\n- Test\n- Tagged\n"
+    it "converts straightly items in a list" do
+      template = <<~end_text.lstrip
+        Changelog for {Changelog#1.Version} released in {Changelog#1.Release}.
+        Changes:
+        - {Changelog#1.Changes}
+      end_text
+      expection = <<~end_text.lstrip
+        Changelog for 0.1.0 released in 2021-07-11.
+        Changes:
+        - Variables
+        - Objects
+        - Lists
+      end_text
 
-      expect(result).must_equal expected
+      expect(compile template, dataset).must_equal expection
     end
 
-    it 'converts item in a list' do
-      template = "{languages#2.name} site 'https:{languages#2.url}' and {languages#1.name} site 'https:{languages#1.url}'"
-      result = compile template, {
-        languages: [
-          { name: 'Go', url: '//go.dev/' },
-          { name: 'Ruby', url: '//www.ruby-lang.org/' },
-        ]
-      }
-
-      expect(result).must_equal %{Ruby site 'https://www.ruby-lang.org/' and Go site 'https://go.dev/'}
-
-      template = "The {languages#1} programing language is a programmer's best friend"
-      result = compile template, {
-        languages: %w[Ruby NodeJS Go]
-      }
-      expect(result).must_equal "The Ruby programing language is a programmer's best friend"
-    end
-
-    it 'converts list of objects' do
+    it "converts list of objects" do
       template = "- [{references:name}]({references:url})\n"
       result = compile template, {
         references: [
-          { name: 'Mustache', url: '//mustache.github.io' },
-          { name: 'Handlebars', url: '//handlebarsjs.com' },
+          { name: "Mustache", url: "//mustache.github.io" },
+          { name: "Handlebars", url: "//handlebarsjs.com" },
         ]
       }
       expected = "- [Mustache](//mustache.github.io)\n- [Handlebars](//handlebarsjs.com)\n"
@@ -76,28 +87,28 @@ describe 'drawght compiler' do
       expect(result).must_equal expected
     end
 
-    it 'converts nested list of objects' do
-      template = <<-end_text.gsub /^[ ]{8}/, ''
-        - [{references:ruby.name}]({references:ruby.url})
-        - [{references:nodejs.name}]({references:nodejs.url})
+    it "converts nested list of objects" do
+      template = <<-end_text.lstrip
+        - [{references:language.name}]({references:language.url})
       end_text
+
       result = compile template, {
         references: [
           {
-            ruby: {
-              name: 'Mustache',
-              url: '//mustache.github.io',
+            language: {
+              name: "Mustache",
+              url: "//mustache.github.io",
             }
           }, {
-            nodejs: {
-              name: 'Handlebars',
-              url: '//handlebarsjs.com',
+            language: {
+              name: "Handlebars",
+              url: "//handlebarsjs.com",
             }
           }
         ]
       }
 
-      expect(result).must_equal <<-end_text.gsub /^[ ]{8}/, ''
+      expect(result).must_equal <<~end_text.lstrip
         - [Mustache](//mustache.github.io)
         - [Handlebars](//handlebarsjs.com)
       end_text
