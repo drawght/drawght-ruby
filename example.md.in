@@ -17,3 +17,7 @@ The syntax was inspired by:
 Tags:
 
 - {tags} (tagged by {author.name}).
+
+This list has 12 lines.
+
+- [{references:name}]({references:url}) {tags} {author.name} {author.networks:name} {author.networks#2.name}

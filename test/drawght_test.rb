@@ -17,7 +17,7 @@ describe "drawght" do
       result = Drawght.compile template, {
         name: "Drawght",
         version: "0.1.0",
-        "release date": "2021-07-01",
+        "release date" =>  "2021-07-01",
         "start-at" => "2021-06-30",
       }
 

@@ -1,41 +1,41 @@
 # encoding: utf-8
 
-require 'minitest/autorun'
-require_relative '../lib/drawght'
+require "minitest/autorun"
+require_relative "../lib/drawght"
 
 class Parser
   include Drawght::Parser
 end
 
-describe 'drawght parser' do
+describe "drawght parser" do
   # dataset = {
-  #   'Author' => {
-  #     'Name' => 'Isaac Asimov',
-  #     'Birhtdate' => '1920-01-02',
+  #   "Author" => {
+  #     "Name" => "Isaac Asimov",
+  #     "Birhtdate" => "1920-01-02",
   #   },
-  #   'Series' => [
+  #   "Series" => [
   #     {
-  #       'Name' => 'Foundation',
-  #       'Books' => [
-  #         { 'Title' => 'Foundation', 'Year' => 1951 },
-  #         { 'Title' => 'Foundation and Empire', 'Year' => 1952 },
-  #         { 'Title' => 'Second Foundation', 'Year' => 1953 },
-  #         { 'Title' => 'Foundation\'s Edge', 'Year' => 1982 },
-  #         { 'Title' => 'Foundation and Earth', 'Year' => 1986 },
-  #         { 'Title' => 'Prelude to Foundation', 'Year' => 1988 },
-  #         { 'Title' => 'Forward the Foundation', 'Year' => 1993 },
+  #       "Name" => "Foundation",
+  #       "Books" => [
+  #         { "Title" => "Foundation", "Year" => 1951 },
+  #         { "Title" => "Foundation and Empire", "Year" => 1952 },
+  #         { "Title" => "Second Foundation", "Year" => 1953 },
+  #         { "Title" => "Foundation\"s Edge", "Year" => 1982 },
+  #         { "Title" => "Foundation and Earth", "Year" => 1986 },
+  #         { "Title" => "Prelude to Foundation", "Year" => 1988 },
+  #         { "Title" => "Forward the Foundation", "Year" => 1993 },
   #       ]
   #     }, {
-  #       'Name' => 'Robot',
-  #       'Books' => [
-  #         { 'Title' => 'The Complete Robot', 'Year' => 1982 },
-  #         { 'Title' => 'The Bicentennial Man', 'Year' => 1976 },
-  #         { 'Title' => 'Mother Earth', 'Year' => 1949 },
-  #         { 'Title' => 'The Caves of Steel', 'Year' => 1954 },
-  #         { 'Title' => 'The Naked Sun', 'Year' => 1957 },
-  #         { 'Title' => 'Mirror Image', 'Year' => 1972 },
-  #         { 'Title' => 'The Robots of Dawn', 'Year' => 1983 },
-  #         { 'Title' => 'Robots and Empire', 'Year' => 1985 },
+  #       "Name" => "Robot",
+  #       "Books" => [
+  #         { "Title" => "The Complete Robot", "Year" => 1982 },
+  #         { "Title" => "The Bicentennial Man", "Year" => 1976 },
+  #         { "Title" => "Mother Earth", "Year" => 1949 },
+  #         { "Title" => "The Caves of Steel", "Year" => 1954 },
+  #         { "Title" => "The Naked Sun", "Year" => 1957 },
+  #         { "Title" => "Mirror Image", "Year" => 1972 },
+  #         { "Title" => "The Robots of Dawn", "Year" => 1983 },
+  #         { "Title" => "Robots and Empire", "Year" => 1985 },
   #       ]
   #     }
   #   ]
@@ -63,12 +63,12 @@ describe 'drawght parser' do
     end
   end
 
-  describe 'when parses path keys' do
-    it 'parses the variable syntax path' do
+  describe "when parses path keys" do
+    it "parses the variable syntax path" do
       templates = [
-        'author',
-        'book title',
-        'collection-name',
+        "author",
+        "book title",
+        "collection-name",
       ]
 
       for template in templates
@@ -76,11 +76,11 @@ describe 'drawght parser' do
       end
     end
 
-    it 'parses the attribute syntax path' do
+    it "parses the attribute syntax path" do
       expectations = {
-        'author.name' => ['author', 'name'],
-        'user.last access' => ['user', 'last access'],
-        'user.created-at' => ['user', 'created-at'],
+        "author.name" => ["author", "name"],
+        "user.last access" => ["user", "last access"],
+        "user.created-at" => ["user", "created-at"],
       }
 
       for (template, expected) in expectations
@@ -88,48 +88,48 @@ describe 'drawght parser' do
       end
     end
 
-    it 'parses the main collection syntax path' do
+    it "parses the main collection syntax path" do
       (0..9).each do |index|
         expect_path_keys from: "##{index + 1}", must_equal: [index]
-        expect_path_keys from: "##{index + 1}.Title", must_equal: [index, 'Title']
+        expect_path_keys from: "##{index + 1}.Title", must_equal: [index, "Title"]
       end
     end
 
-    it 'parses the attribute collection syntax path' do
+    it "parses the attribute collection syntax path" do
       (0..9).each do |index|
-        expect_path_keys from: "Books##{index + 1}", must_equal: ['Books', index]
+        expect_path_keys from: "Books##{index + 1}", must_equal: ["Books", index]
       end
     end
 
-    it 'parses the nested collection syntax path' do
+    it "parses the nested collection syntax path" do
       (0..9).each do |index|
-        expect_path_keys from: "Books##{index + 1}.Title", must_equal: ['Books', index, 'Title']
+        expect_path_keys from: "Books##{index + 1}.Title", must_equal: ["Books", index, "Title"]
       end
 
-      expect_path_keys from: 'Books:Title', must_equal: ['Books', '&', 'Title']
+      expect_path_keys from: "Books:Title", must_equal: ["Books", "&", "Title"]
 
-      expect_path_keys from: 'Series:Books:Title', must_equal: %w[Series & Books & Title]
+      expect_path_keys from: "Series:Books:Title", must_equal: %w[Series & Books & Title]
 
-      expect_path_keys from: 'Series#1.Books:Title', must_equal: ['Series', 0, 'Books', '&', 'Title']
+      expect_path_keys from: "Series#1.Books:Title", must_equal: ["Series", 0, "Books", "&", "Title"]
 
       (0..1).each do |serie|
         (0..1).each do |book|
           expect_path_keys **{
             from: "Series##{serie + 1}.Books##{book + 1}.Title",
-            must_equal: ['Series', serie, 'Books', book, 'Title']
+            must_equal: ["Series", serie, "Books", book, "Title"]
           }
         end
       end
     end
   end
 
-  describe 'when parses placeholders' do
-    it 'gets all placeholders from text' do
+  describe "when parses placeholders" do
+    it "gets all placeholders from text" do
       expectations = {
-        'The {author.name} has {author.age} years old' => %w[author.name author.age],
+        "The {author.name} has {author.age} years old" => %w[author.name author.age],
         "The author {author.name} wrotte the following books:\n- {author.books:title}" => [
-          'author.name',
-          'author.books:title',
+          "author.name",
+          "author.books:title",
         ]
       }
 
@@ -139,33 +139,33 @@ describe 'drawght parser' do
     end
   end
 
-  describe 'when mapping placeholders' do
-    it 'maps all placeholders from text' do
+  describe "when mapping placeholders" do
+    it "maps all placeholders from text" do
       # dataset = {
-      #   'Name' => 'Drawght',
-      #   'Changelog' => [
+      #   "Name" => "Drawght",
+      #   "Changelog" => [
       #     {
-      #       'Version' => '0.1.0',
-      #       'Release' => '2021-07-11',
-      #       'Summary' => 'Work in progress!',
-      #       'Changes' => [
-      #         'Variables',
-      #         'Objects',
-      #         'Lists',
+      #       "Version" => "0.1.0",
+      #       "Release" => "2021-07-11",
+      #       "Summary" => "Work in progress!",
+      #       "Changes" => [
+      #         "Variables",
+      #         "Objects",
+      #         "Lists",
       #       ]
       #     }, {
-      #       'Version' => '0.2.0',
-      #       'Release' => '2024-08-30',
-      #       'Summary' => 'Tests and tests.',
-      #       'Changes' => [
-      #         'Tests for variables',
-      #         'Tests for objects',
-      #         'Tests for lists',
+      #       "Version" => "0.2.0",
+      #       "Release" => "2024-08-30",
+      #       "Summary" => "Tests and tests.",
+      #       "Changes" => [
+      #         "Tests for variables",
+      #         "Tests for objects",
+      #         "Tests for lists",
       #       ],
-      #       'Tests' => {
-      #         'Unit' => [
-      #           { 'Models' => [ 'Person', 'User' ],
-      #           { 'Controllers' => [ 'PersonController', 'UserController', 'AccessController' ] },
+      #       "Tests" => {
+      #         "Unit" => [
+      #           { "Models" => [ "Person", "User" ],
+      #           { "Controllers" => [ "PersonController", "UserController", "AccessController" ] },
       #         ]
       #       }
       #     }
@@ -173,30 +173,30 @@ describe 'drawght parser' do
       # }
 
       expectations = {
-        '{Name} v{Changelog#2.Version} ({Changelog#2.Release})' => {
+        "{Name} v{Changelog#2.Version} ({Changelog#2.Release})" => {
           straightly_placeholders: [
-            'Name',
-            'Changelog#2.Version',
-            'Changelog#2.Release',
+            "Name",
+            "Changelog#2.Version",
+            "Changelog#2.Release",
           ],
         },
-        '- {Name} v{Changelog:Version} - {Changelog:Release}' => {
-          straightly_placeholders: ['Name'],
+        "- {Name} v{Changelog:Version} - {Changelog:Release}" => {
+          straightly_placeholders: ["Name"],
           sequential_placeholders: {
-            'Changelog' => {
-              'Changelog:Version' => 'Version',
-              'Changelog:Release' => 'Release'
+            "Changelog" => {
+              "Changelog:Version" => "Version",
+              "Changelog:Release" => "Release"
             },
           }
         },
-        '- v{Changelog:Version} > {Tests:Unit:Models} {Tests:Unit:Controllers}' => {
+        "- v{Changelog:Version} > {Tests:Unit:Models} {Tests:Unit:Controllers}" => {
           sequential_placeholders: {
-            'Changelog' => {
-              'Changelog:Version' => 'Version',
+            "Changelog" => {
+              "Changelog:Version" => "Version",
             },
-            'Tests:Unit' => {
-              'Tests:Unit:Models' => 'Models',
-              'Tests:Unit:Controllers' => 'Controllers',
+            "Tests:Unit" => {
+              "Tests:Unit:Models" => "Models",
+              "Tests:Unit:Controllers" => "Controllers",
             },
           }
         }

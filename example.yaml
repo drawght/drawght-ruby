@@ -19,3 +19,8 @@ references:
 tags:
 - Template
 - Draft
+languages:
+- name: Ruby
+  version: 3.4
+- name: NodeJS
+  version: 1.20
