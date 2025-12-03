@@ -1,68 +1,88 @@
-class Drawght::Parser
-  PREFIX, ATTRIBUTE, QUERY, ITEM, SUFFIX,  = "{", ".", ":", "#", "}"
-  KEY, LIST, INDEX = "(?<key>.*?)", "(?<list>.*?)", "(?<index>.*?)"
-  EOL = /\r?\n/
+# encoding: utf-8
+# frozen_string_literal: true
 
-  KEY_PATTERN = Regexp.new "#{PREFIX}#{KEY}#{SUFFIX}"
-  LIST_PATTERN = Regexp.new "#{PREFIX}#{LIST}#{QUERY}#{KEY}#{SUFFIX}"
-  ITEM_PATTERN = Regexp.new "#{LIST}#{ITEM}#{INDEX}([#{ATTRIBUTE}]#{KEY})?$"
+module Drawght
+  module Parser
+    using Extensions
 
-  def initialize(template)
-    @template = template
-  end
+    def pathkeys_from placeholder
+      path = case placeholder
+             when ATTRIBUTES_PATTERN then
+               path_keys_for_attribute placeholder
+             when QUERY_PATTERN then
+               path_keys_for_query placeholder
+             else
+               [placeholder]
+             end
 
-  def parse(data)
-    self.parse_keys(self.parse_queries(@template, data), data)
-  end
+      path.flatten
+    end
 
-  def parse_queries(template, data)
-    template.split(EOL).map do |line|
-      result = line
-      line.scan LIST_PATTERN do |(list, key)|
-        value = value_from_key(list, data)
-        if value && (value.kind_of? Array) && key
-          partial = line.gsub("#{list}#{QUERY}", "")
-          parsed_lines = value.map { |item| parse_template(partial, item) }
-          result = result.gsub(line, parsed_lines.join("\n"))
+    def placeholders_from string
+      return [] unless string =~ PLACEHOLDERS_PATTERN
+
+      string.scan(PLACEHOLDERS_PATTERN).flatten
+    end
+
+    def mapping_placeholders_from string
+      clear_placeholder_mappings!
+
+      placeholders_from(string).map do |placeholder|
+        if placeholder =~ QUERY_PATTERN
+          placeholder.scan %r/^(.*)#{QUERY}(.*)$/ do |pathkeys, attribute|
+            (sequential_placeholders[pathkeys] ||= {}).update placeholder => attribute
+          end
+        else
+          straightly_placeholders.add placeholder
         end
-      end
-      result
-    end.join("\n")
-  end
 
-  def parse_keys(template, data)
-    template.split(EOL).map do |line|
-      parse_template(line, data)
-    end.join("\n"); 
-  end
-
-  def parse_template(template, data)
-    result = template
-    template.scan KEY_PATTERN do |(key)|
-      template_key = "#{PREFIX}#{key}#{SUFFIX}"
-      value = value_from_key(key, data) || template_key
-      if value.kind_of? Array
-        result = value.map { |item| template.gsub(template_key, item) }.join("\n")
-      else
-        result = result.gsub(template_key, value.to_s)
+        placeholder
       end
     end
-    result
-  end
 
-  private
+    def straightly_placeholders
+      @straightly_placeholders ||= []
+    end
 
-  def value_from_key(nested_key, data)
-    item = nested_key.match ITEM_PATTERN
-    if item
-      list, index, key = item.captures
-      index = index && (index.to_i)
-      value = data.dig *list.split(ATTRIBUTE)
-      if value && (value.kind_of? Array) && index
-        key ? value[index - 1][key] : value[index - 1]
+    def sequential_placeholders
+      @sequential_placeholders ||= {}
+    end
+
+    def replace_placeholders template, value
+      case value
+      when Hash
+        replace_placeholder_attributes_for template, value
+      when Array
+        replace_placeholder_collections_for template, value
+      else
+        replace_placeholder_variables_from template, value
       end
-    else
-      data.dig *nested_key.split(ATTRIBUTE)
+    end
+
+    private
+
+    def path_keys_for_attribute placeholder
+      placeholder.split(ATTRIBUTES_PATTERN).map do |item|
+        if item.to_s =~ QUERY_PATTERN
+          path_keys_for_query item
+        else
+          item.to_s =~ /^\d/ ? item.to_i - 1 : item unless item.to_s.empty?
+        end
+      end.compact
+    end
+
+    def path_keys_for_query placeholder
+      placeholder.gsub(QUERY, "#{QUERY}&#{QUERY}").split(QUERY_PATTERN).map do |item|
+        if item.to_s =~ ATTRIBUTES_PATTERN
+          path_keys_for_attribute item
+        else
+          item
+        end
+      end
+    end
+
+    def clear_placeholder_mappings!
+      straightly_placeholders.clear && sequential_placeholders.clear
     end
   end
 end

@@ -169,28 +169,165 @@ Tags:
 </ul>
 ```
 
+## Install
+
+```bash
+gem install drawght
+```
+
+## Usage
+
+```ruby
+require "drawght"
+
+template = "{package.name} v{package.version}"
+result = Drawght.compile template, {
+  package: {
+    name: "Drawght",
+    version: "1.0.0",
+  }
+}
+
+puts result
+# Drawght v1.0.0
+```
+
 ## Syntax
 
 Drawght has a simple syntax:
 
-- `{key}`: converts `key` to its respective value. If the value is a list, then
-  the row will be replicated and converted with the respective values. 
+- `{key}`: converts `key` to its respective value. If the value is a
+  collection, then the row will be replicated and converted with the respective
+  values. 
 
 - `{object.key}`: converts `key` to its respective value inside `object`,
   assuming the same behavior as `{key}`. 
 
-- `{list:key}`: selects `list`, replicates the line for each item in the list,
-  and converts `key` to its respective value contained in an object within
-  `list`. The `list` key can also be accessed by `object.list`, just as `key`
-  can also be accessed by `object.key` which will be converted following the
-  same process in case it is a list. 
+- `{collection:key}`: selects `collection`, replicates the line for each item
+  in the collection, and converts `key` to its respective value contained in an
+  object within `collection`. The `collection` key can also be accessed by
+  `object.collection`, just as `key` can also be accessed by `object.key` which
+  will be converted following the same process in case it is a collection. 
 
-- `{list#n.key}`: selects item object `n` (from 1) from `list` and converts
-  `key` to its respective value. The whole process is similar to `object.key`. 
+- `{collection#n.key}`: selects item object `n` (from 1) from `collection` and
+  converts `key` to its respective value. The whole process is similar to
+  `object.key`. 
+
+## How it works
+
+### Variables and attributes
+
+#### Definition
+
+```yaml
+Author:
+  Name: John Scalzi
+
+Protagonist: John Perry
+```
+
+#### Usage
+
+```
+{Protagonist}
+{Author.Name}
+```
+
+### Collections
+
+#### Definition
+
+```yaml
+Book Titles:
+- Old Man's War
+- The Ghost Brigades
+- The Last Colony
+
+# Or
+
+Books:
+- Title: Old Man's War
+- Title: The Ghost Brigades
+- Title: The Last Colony
+```
+
+#### Usage
+
+For value sequencing.
+
+```
+{Book Titles}
+{Books:Title}
+```
+
+For value straightly.
+
+```
+{Book Titles#1}
+{Book Titles#2}
+{Book Titles#3}
+
+{Books#1.Title}
+{Books#2.Title}
+{Books#3.Title}
+```
+
+### Nested collections
+
+#### Definition
+
+```yaml
+Books:
+- Title: Old Man's War
+  ISBN: 0-7653-0940-8
+
+- Title: The Ghost Brigades
+  ISBN: 0-7653-1502-5
+
+- Title: The Last Colony
+  ISBN: 0-7653-1697-8
+
+Series:
+- Name: Old Man's War
+  Books:
+  - Title: Old Man's War
+    ISBN: 0-7653-0940-8
+
+  - Title: The Ghost Brigades
+    ISBN: 0-7653-1502-5
+
+  - Title: The Last Colony
+    ISBN: 0-7653-1697-8
+
+- Name: Lock In
+  Books:
+  - Title: Lock In
+    ISBN: 978-0-7653-7586-5
+  - Title: Head On
+    ISBN: 978-0-7653-8891-9
+```
+
+#### Usage
+
+```
+{Books:Title}
+
+{Books#1.Title}
+
+{Series:Name}
+
+{Series:Books:Title}
+
+{Series#1.Name}
+
+{Series#1.Books:Title}
+
+{Series#2.Books#2.Title}
+```
 
 ## License (MIT)
 
-### Copyright (c) 2021, Hallison Batista
+### Copyright (c) 2021-2025, Hallison Batista
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

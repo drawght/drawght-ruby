@@ -1,0 +1,4 @@
+.vimsession
+**.bkp*
+drawght-*.gem
+lib/drawght/version.rb

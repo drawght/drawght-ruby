@@ -1,0 +1,23 @@
+- version: 1.0.0
+  date: 2025-12-03
+  summary:
+    The compiler has finished.
+  changes:
+  - New compiler process.
+  - Refined extension methods have been added.
+  - Test coverage.
+  - Syntax revision for nested values in collections.
+
+- version: 0.2.0
+  date: 2024-08-30
+  summary:
+    Tests and tests.
+  changes:
+  - Tests have been added to test variables, objects and lists.
+
+- version: 0.1.0
+  date: 2021-07-11
+  summary:
+    Work in progress! Syntax and compiler have been coded.
+  changes:
+  - Process variables, objects and lists.
