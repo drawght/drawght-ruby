@@ -5,21 +5,11 @@ module Drawght
   TOKENS = [
     PREFIX = '{',
     SUFFIX = '}',
-    ATTRIBUTE = '.',
-    ITEM = '#',
-    QUERY = ':',
   ]
 
   PLACEHOLDERS_PATTERN = Regexp.new "\\#{PREFIX}([^\\#{SUFFIX}]+)\\#{SUFFIX}"
 
-  ATTRIBUTES_PATTERN = Regexp.new "\\#{ATTRIBUTE}|\\#{ITEM}"
-  ATTRIBUTE_PATTERN = Regexp.new "\\#{ATTRIBUTE}"
-  ITEM_PATTERN = Regexp.new "\\#{ITEM}"
-  QUERY_PATTERN = Regexp.new "\\#{QUERY}"
-
-  PATH_PATTERN = Regexp.new "\\#{ATTRIBUTE}|\\#{ITEM}|\\#{QUERY}"
-
-  module Extensions
+  module HashExtensions
     refine Hash do
       def deep_stringify_keys!
         transform_keys! do |key|
@@ -49,19 +39,29 @@ module Drawght
         raise error
       end
     end
+  end
 
+  module ArrayExtensions
     refine Array do
       def add item
         push item unless include? item
         self
       end
     end
+  end
 
+  module StringExtensions
     refine String do
       def to_placeholder
         "#{PREFIX}#{self}#{SUFFIX}"
       end
     end
+  end
+
+  module AllExtensions
+    include HashExtensions
+    include ArrayExtensions
+    include StringExtensions
   end
 
   require_relative "drawght/parser"

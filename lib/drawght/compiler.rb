@@ -4,7 +4,7 @@
 module Drawght
 
 class Compiler
-  using Extensions
+  using AllExtensions
 
   include Parser
 

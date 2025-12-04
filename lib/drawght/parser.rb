@@ -3,16 +3,25 @@
 
 module Drawght
   module Parser
-    using Extensions
+    TOKENS = [
+      ATTRIBUTE = '.',
+      ITEM = '#',
+      SEQUENCER = ':',
+    ]
 
-    def pathkeys_from placeholder
-      path = case placeholder
-             when ATTRIBUTES_PATTERN then
-               path_keys_for_attribute placeholder
-             when QUERY_PATTERN then
-               path_keys_for_query placeholder
+    STRAIGHTLY_PATTERN = Regexp.new "\\#{ATTRIBUTE}|\\#{ITEM}"
+    SEQUENTIAL_PATTERN = Regexp.new "\\#{SEQUENCER}"
+
+    using ArrayExtensions
+
+    def pathkeys_from string
+      path = case string
+             when STRAIGHTLY_PATTERN then
+               pathkeys_for_attribute string
+             when SEQUENTIAL_PATTERN then
+               pathkeys_for_collection string
              else
-               [placeholder]
+               [string]
              end
 
       path.flatten
@@ -28,8 +37,8 @@ module Drawght
       clear_placeholder_mappings!
 
       placeholders_from(string).map do |placeholder|
-        if placeholder =~ QUERY_PATTERN
-          placeholder.scan %r/^(.*)#{QUERY}(.*)$/ do |pathkeys, attribute|
+        if placeholder =~ SEQUENTIAL_PATTERN
+          placeholder.scan %r/^(.*)#{SEQUENCER}(.*)$/ do |pathkeys, attribute|
             (sequential_placeholders[pathkeys] ||= {}).update placeholder => attribute
           end
         else
@@ -48,37 +57,30 @@ module Drawght
       @sequential_placeholders ||= {}
     end
 
-    def replace_placeholders template, value
-      case value
-      when Hash
-        replace_placeholder_attributes_for template, value
-      when Array
-        replace_placeholder_collections_for template, value
-      else
-        replace_placeholder_variables_from template, value
-      end
-    end
-
     private
 
-    def path_keys_for_attribute placeholder
-      placeholder.split(ATTRIBUTES_PATTERN).map do |item|
-        if item.to_s =~ QUERY_PATTERN
-          path_keys_for_query item
+    def pathkeys_for_attribute placeholder
+      placeholder.split(STRAIGHTLY_PATTERN).map do |item|
+        value = item.to_s
+        if value =~ SEQUENTIAL_PATTERN
+          pathkeys_for_collection item
         else
-          item.to_s =~ /^\d/ ? item.to_i - 1 : item unless item.to_s.empty?
+          value =~ /^\d/ ? item.to_i - 1 : item unless value.empty?
         end
       end.compact
     end
 
-    def path_keys_for_query placeholder
-      placeholder.gsub(QUERY, "#{QUERY}&#{QUERY}").split(QUERY_PATTERN).map do |item|
-        if item.to_s =~ ATTRIBUTES_PATTERN
-          path_keys_for_attribute item
-        else
-          item
+    def pathkeys_for_collection placeholder
+      placeholder
+        .gsub(SEQUENCER, "#{SEQUENCER}&#{SEQUENCER}")
+        .split(SEQUENTIAL_PATTERN)
+        .map do |item|
+          if item.to_s =~ STRAIGHTLY_PATTERN
+            pathkeys_for_attribute item
+          else
+            item
+          end
         end
-      end
     end
 
     def clear_placeholder_mappings!

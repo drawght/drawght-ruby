@@ -5,6 +5,10 @@ describe "drawght parser" do
     include Drawght::Parser
   end
 
+  def parser
+    @parser ||= Parser.new
+  end
+
   # dataset = {
   #   "Author" => {
   #     "Name" => "Isaac Asimov",
@@ -38,11 +42,7 @@ describe "drawght parser" do
   #   ]
   # }
 
-  def parser
-    @parser ||= Parser.new
-  end
-
-  def expect_path_keys(from:, must_equal:)
+  def expect_pathkeys(from:, must_equal:)
     result = parser.pathkeys_from from
     expect(result).must_equal must_equal
   end
@@ -69,7 +69,7 @@ describe "drawght parser" do
       ]
 
       for template in templates
-        expect_path_keys from: template, must_equal: [template]
+        expect_pathkeys from: template, must_equal: [template]
       end
     end
 
@@ -81,37 +81,37 @@ describe "drawght parser" do
       }
 
       for (template, expected) in expectations
-        expect_path_keys from: template, must_equal: expected
+        expect_pathkeys from: template, must_equal: expected
       end
     end
 
     it "parses the main collection syntax path" do
       (0..9).each do |index|
-        expect_path_keys from: "##{index + 1}", must_equal: [index]
-        expect_path_keys from: "##{index + 1}.Title", must_equal: [index, "Title"]
+        expect_pathkeys from: "##{index + 1}", must_equal: [index]
+        expect_pathkeys from: "##{index + 1}.Title", must_equal: [index, "Title"]
       end
     end
 
     it "parses the attribute collection syntax path" do
       (0..9).each do |index|
-        expect_path_keys from: "Books##{index + 1}", must_equal: ["Books", index]
+        expect_pathkeys from: "Books##{index + 1}", must_equal: ["Books", index]
       end
     end
 
     it "parses the nested collection syntax path" do
       (0..9).each do |index|
-        expect_path_keys from: "Books##{index + 1}.Title", must_equal: ["Books", index, "Title"]
+        expect_pathkeys from: "Books##{index + 1}.Title", must_equal: ["Books", index, "Title"]
       end
 
-      expect_path_keys from: "Books:Title", must_equal: ["Books", "&", "Title"]
+      expect_pathkeys from: "Books:Title", must_equal: ["Books", "&", "Title"]
 
-      expect_path_keys from: "Series:Books:Title", must_equal: %w[Series & Books & Title]
+      expect_pathkeys from: "Series:Books:Title", must_equal: %w[Series & Books & Title]
 
-      expect_path_keys from: "Series#1.Books:Title", must_equal: ["Series", 0, "Books", "&", "Title"]
+      expect_pathkeys from: "Series#1.Books:Title", must_equal: ["Series", 0, "Books", "&", "Title"]
 
       (0..1).each do |serie|
         (0..1).each do |book|
-          expect_path_keys **{
+          expect_pathkeys **{
             from: "Series##{serie + 1}.Books##{book + 1}.Title",
             must_equal: ["Series", serie, "Books", book, "Title"]
           }
