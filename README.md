@@ -1,8 +1,8 @@
 # Drawght
 
-Drawght is a data handler for texts without logical statements. The goal is
-to use a dataset (such as the subject of a text) to draft a document
-template. It can be considered a mini template processor.
+Drawght (like draft/draught) is a data handler for texts without logical
+statements. The goal is to use a dataset (such as the subject of a text) to
+draft a document template. It can be considered a mini template processor.
 
 Data is accessed through `{}` braces, replaced by their respective values.
 
