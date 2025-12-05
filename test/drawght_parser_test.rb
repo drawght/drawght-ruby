@@ -42,25 +42,7 @@ describe "drawght parser" do
   #   ]
   # }
 
-  def expect_pathkeys(from:, must_equal:)
-    result = parser.pathkeys_from from
-    expect(result).must_equal must_equal
-  end
-
-  def expect_placeholders(from:, must_equal:)
-    result = parser.placeholders_from from
-    expect(result).must_equal must_equal
-  end
-
-  def expect_placeholders_mapping(from:, must_equal:)
-    parser.mapping_placeholders_from from
-
-    must_equal.each do |navigation, placeholders|
-      expect(parser.send navigation).must_equal placeholders
-    end
-  end
-
-  describe "when parses path keys" do
+  describe "when parsing path keys" do
     it "parses the variable syntax path" do
       templates = [
         "author",
@@ -69,7 +51,7 @@ describe "drawght parser" do
       ]
 
       for template in templates
-        expect_pathkeys from: template, must_equal: [template]
+        expect(parser.pathkeys_from template).must_equal [template]
       end
     end
 
@@ -81,58 +63,57 @@ describe "drawght parser" do
       }
 
       for (template, expected) in expectations
-        expect_pathkeys from: template, must_equal: expected
+        expect(parser.pathkeys_from template).must_equal expected
       end
     end
 
-    describe "when parses collection syntax" do
+    describe "when parsing collection syntax" do
       it "parses the main syntax" do
         (0..9).each do |index|
-          expect_pathkeys from: "##{index + 1}", must_equal: [index]
-          expect_pathkeys from: "##{index + 1}.Title", must_equal: [index, "Title"]
+          expect(parser.pathkeys_from "##{index + 1}").must_equal [index]
+          expect(parser.pathkeys_from "##{index + 1}.Title").must_equal [index, "Title"]
         end
       end
 
       it "parses the attribute syntax" do
         (0..9).each do |index|
-          expect_pathkeys from: "Books##{index + 1}", must_equal: ["Books", index]
+          expect(parser.pathkeys_from "Books##{index + 1}").must_equal ["Books", index]
         end
       end
 
       it "parses the nested syntax" do
         (0..9).each do |index|
-          expect_pathkeys from: "Books##{index + 1}.Title", must_equal: ["Books", index, "Title"]
+          expect(parser.pathkeys_from "Books##{index + 1}.Title").must_equal ["Books", index, "Title"]
         end
 
-        expect_pathkeys from: "Books:Title", must_equal: ["Books", "&", "Title"]
+        expect(parser.pathkeys_from "Books:Title").must_equal ["Books", "&", "Title"]
 
-        expect_pathkeys from: "Series:Books:Title", must_equal: %w[Series & Books & Title]
+        expect(parser.pathkeys_from "Series:Books:Title").must_equal %w[Series & Books & Title]
 
-        expect_pathkeys from: "Series#1.Books:Title", must_equal: ["Series", 0, "Books", "&", "Title"]
+        expect(parser.pathkeys_from "Series#1.Books:Title").must_equal ["Series", 0, "Books", "&", "Title"]
 
         (0..1).each do |serie|
           (0..1).each do |book|
-            expect_pathkeys **{
-              from: "Series##{serie + 1}.Books##{book + 1}.Title",
-              must_equal: ["Series", serie, "Books", book, "Title"]
-            }
+            template = "Series##{serie + 1}.Books##{book + 1}.Title"
+            expected = ["Series", serie, "Books", book, "Title"]
+            expect(parser.pathkeys_from template).must_equal expected
           end
         end
       end
 
-      it "does parsing the last item" do
-        expect_pathkeys from: 'Changelog#$.Version', must_equal: ["Changelog", -1, "Version"]
-        expect_pathkeys from: "Changelog#0.Version", must_equal: ["Changelog", -1, "Version"]
+      it "parses the last item syntax" do
+        expect(parser.pathkeys_from 'Changelog#$.Version').must_equal ["Changelog", -1, "Version"]
+        expect(parser.pathkeys_from "Changelog#0.Version").must_equal ["Changelog", -1, "Version"]
       end
 
-      it "does parsing the collection size syntax" do
-        expect_pathkeys from: "Changelog*", must_equal: ["Changelog", "*"]
-        expect_pathkeys from: "Changelog#1.Changes*", must_equal: ["Changelog", 0, "Changes", "*"]
+      it "parses the collection size syntax" do
+        expect(parser.pathkeys_from "Changelog*").must_equal ["Changelog", "*"]
+        expect(parser.pathkeys_from "Changelog#1.Changes*").must_equal ["Changelog", 0, "Changes", "*"]
       end
     end
   end
 
-  describe "when parses placeholders" do
+  describe "when parsing placeholders" do
     it "gets all placeholders from text" do
       expectations = {
         "The {author.name} has {author.age} years old" => %w[author.name author.age],
@@ -143,7 +124,7 @@ describe "drawght parser" do
       }
 
       for (template, expected) in expectations
-        expect_placeholders from: template, must_equal: expected
+        expect(parser.placeholders_from template).must_equal expected
       end
     end
   end
@@ -212,7 +193,11 @@ describe "drawght parser" do
       }
 
       for (template, expected) in expectations
-        expect_placeholders_mapping from: template, must_equal: expected
+        parser.mapping_placeholders_from template
+
+        expected.each do |navigation, placeholders|
+          expect(parser.send navigation).must_equal placeholders
+        end
       end
     end
   end
