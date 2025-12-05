@@ -126,7 +126,8 @@ describe "drawght parser" do
       end
 
       it "does parsing the collection size syntax" do
-        skip
+        expect_pathkeys from: "Changelog*", must_equal: ["Changelog", "*"]
+        expect_pathkeys from: "Changelog#1.Changes*", must_equal: ["Changelog", 0, "Changes", "*"]
       end
     end
   end

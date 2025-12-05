@@ -7,23 +7,26 @@ module Drawght
       ATTRIBUTE = '.',
       ITEM = '#',
       SEQUENCER = ':',
+      CONJUNCTION = '&',
       LAST_ITEM = '$',
+      LENGTH = '*',
     ]
 
     STRAIGHTLY_PATTERN = Regexp.new "\\#{ATTRIBUTE}|\\#{ITEM}"
-    SEQUENTIAL_PATTERN = Regexp.new "\\#{SEQUENCER}"
+    SEQUENTIAL_PATTERN = Regexp.new "(\\#{SEQUENCER}|\\#{LENGTH})"
+    SEQUENCING_PATTERN = %r/^(.*)#{SEQUENTIAL_PATTERN}(.*)$/
 
     using ArrayExtensions
 
     def pathkeys_from string
       path = case string
-             when STRAIGHTLY_PATTERN then
-               pathkeys_for_attribute string
-             when SEQUENTIAL_PATTERN then
-               pathkeys_for_collection string
-             else
-               [string]
-             end
+        when STRAIGHTLY_PATTERN then
+          pathkeys_for_attribute string
+        when SEQUENTIAL_PATTERN then
+          pathkeys_for_collection string
+        else
+          [string]
+      end
 
       path.flatten
     end
@@ -39,7 +42,7 @@ module Drawght
 
       placeholders_from(string).map do |placeholder|
         if placeholder =~ SEQUENTIAL_PATTERN
-          placeholder.scan %r/^(.*)#{SEQUENCER}(.*)$/ do |pathkeys, attribute|
+          placeholder.scan SEQUENCING_PATTERN do |pathkeys, _delimiter, attribute|
             (sequential_placeholders[pathkeys] ||= {}).update placeholder => attribute
           end
         else
@@ -76,16 +79,16 @@ module Drawght
     end
 
     def pathkeys_for_collection placeholder
-      placeholder
-        .gsub(SEQUENCER, "#{SEQUENCER}&#{SEQUENCER}")
-        .split(SEQUENTIAL_PATTERN)
-        .map do |item|
-          if item.to_s =~ STRAIGHTLY_PATTERN
-            pathkeys_for_attribute item
-          else
-            item
-          end
+      p = placeholder.split(SEQUENTIAL_PATTERN).map do |holding|
+        case holding.to_s
+        when STRAIGHTLY_PATTERN then
+          pathkeys_for_attribute holding
+        when SEQUENCER then
+          CONJUNCTION
+        else
+          holding
         end
+      end
     end
 
     def clear_placeholder_mappings!
