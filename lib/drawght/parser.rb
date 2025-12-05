@@ -7,6 +7,7 @@ module Drawght
       ATTRIBUTE = '.',
       ITEM = '#',
       SEQUENCER = ':',
+      LAST_ITEM = '$',
     ]
 
     STRAIGHTLY_PATTERN = Regexp.new "\\#{ATTRIBUTE}|\\#{ITEM}"
@@ -61,13 +62,17 @@ module Drawght
 
     def pathkeys_for_attribute placeholder
       placeholder.split(STRAIGHTLY_PATTERN).map do |item|
-        value = item.to_s
+        value = attribute_holding_from item
         if value =~ SEQUENTIAL_PATTERN
           pathkeys_for_collection item
         else
-          value =~ /^\d/ ? item.to_i - 1 : item unless value.empty?
+          value =~ /^\d/ ? value.to_i - 1 : item unless value.empty?
         end
       end.compact
+    end
+
+    def attribute_holding_from value
+      value.to_s.sub LAST_ITEM, '0'
     end
 
     def pathkeys_for_collection placeholder

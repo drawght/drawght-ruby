@@ -85,37 +85,48 @@ describe "drawght parser" do
       end
     end
 
-    it "parses the main collection syntax path" do
-      (0..9).each do |index|
-        expect_pathkeys from: "##{index + 1}", must_equal: [index]
-        expect_pathkeys from: "##{index + 1}.Title", must_equal: [index, "Title"]
-      end
-    end
-
-    it "parses the attribute collection syntax path" do
-      (0..9).each do |index|
-        expect_pathkeys from: "Books##{index + 1}", must_equal: ["Books", index]
-      end
-    end
-
-    it "parses the nested collection syntax path" do
-      (0..9).each do |index|
-        expect_pathkeys from: "Books##{index + 1}.Title", must_equal: ["Books", index, "Title"]
-      end
-
-      expect_pathkeys from: "Books:Title", must_equal: ["Books", "&", "Title"]
-
-      expect_pathkeys from: "Series:Books:Title", must_equal: %w[Series & Books & Title]
-
-      expect_pathkeys from: "Series#1.Books:Title", must_equal: ["Series", 0, "Books", "&", "Title"]
-
-      (0..1).each do |serie|
-        (0..1).each do |book|
-          expect_pathkeys **{
-            from: "Series##{serie + 1}.Books##{book + 1}.Title",
-            must_equal: ["Series", serie, "Books", book, "Title"]
-          }
+    describe "when parses collection syntax" do
+      it "parses the main syntax" do
+        (0..9).each do |index|
+          expect_pathkeys from: "##{index + 1}", must_equal: [index]
+          expect_pathkeys from: "##{index + 1}.Title", must_equal: [index, "Title"]
         end
+      end
+
+      it "parses the attribute syntax" do
+        (0..9).each do |index|
+          expect_pathkeys from: "Books##{index + 1}", must_equal: ["Books", index]
+        end
+      end
+
+      it "parses the nested syntax" do
+        (0..9).each do |index|
+          expect_pathkeys from: "Books##{index + 1}.Title", must_equal: ["Books", index, "Title"]
+        end
+
+        expect_pathkeys from: "Books:Title", must_equal: ["Books", "&", "Title"]
+
+        expect_pathkeys from: "Series:Books:Title", must_equal: %w[Series & Books & Title]
+
+        expect_pathkeys from: "Series#1.Books:Title", must_equal: ["Series", 0, "Books", "&", "Title"]
+
+        (0..1).each do |serie|
+          (0..1).each do |book|
+            expect_pathkeys **{
+              from: "Series##{serie + 1}.Books##{book + 1}.Title",
+              must_equal: ["Series", serie, "Books", book, "Title"]
+            }
+          end
+        end
+      end
+
+      it "does parsing the last item" do
+        expect_pathkeys from: 'Changelog#$.Version', must_equal: ["Changelog", -1, "Version"]
+        expect_pathkeys from: "Changelog#0.Version", must_equal: ["Changelog", -1, "Version"]
+      end
+
+      it "does parsing the collection size syntax" do
+        skip
       end
     end
   end
