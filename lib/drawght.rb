@@ -53,6 +53,7 @@ module Drawght
   end
 
   require_relative "drawght/parser"
+  require_relative "drawght/tracker"
   require_relative "drawght/compiler"
   require_relative "drawght/version"
 
