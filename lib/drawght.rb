@@ -27,10 +27,10 @@ module Drawght
         self
       end
 
-      def ditch *pathkeys
+      def digging *pathkeys
         if i = pathkeys.index('&')
           list, subpath = pathkeys[0..i - 1], pathkeys[i + 1..-1]
-          dig(*list).map{ |item| item.ditch *subpath }
+          dig(*list).map{ |item| item.digging *subpath }
         else
           dig *pathkeys
         end
