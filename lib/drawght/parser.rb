@@ -12,9 +12,11 @@ module Drawght
       LENGTH = '*',
     ]
 
-    STRAIGHTLY_PATTERN = Regexp.new "\\#{ATTRIBUTE}|\\#{ITEM}"
-    SEQUENTIAL_PATTERN = Regexp.new "(\\#{SEQUENCER}|\\#{LENGTH})"
+    STRAIGHTLY_PATTERN = Regexp.new "(\\#{ATTRIBUTE}|\\#{ITEM}|\\#{LENGTH})"
+    SEQUENTIAL_PATTERN = Regexp.new "(\\#{SEQUENCER})"
     SEQUENCING_PATTERN = %r/^(.*)#{SEQUENTIAL_PATTERN}(.*)$/
+
+    NUMBER_PATTERN = /^\d+/
 
     using ArrayExtensions
 
@@ -64,14 +66,18 @@ module Drawght
     private
 
     def pathkeys_for_attribute placeholder
-      placeholder.split(STRAIGHTLY_PATTERN).map do |item|
-        value = attribute_holding_from item
-        if value =~ SEQUENTIAL_PATTERN
-          pathkeys_for_collection item
-        else
-          value =~ /^\d/ ? value.to_i - 1 : item unless value.empty?
-        end
-      end.compact
+      placeholder
+        .split(STRAIGHTLY_PATTERN)
+        .reject{ |holding| [ATTRIBUTE, ITEM].include? holding }
+        .map do |holding|
+          value = attribute_holding_from holding
+
+          if value =~ SEQUENTIAL_PATTERN
+            pathkeys_for_collection holding
+          else
+            value =~ NUMBER_PATTERN ? value.to_i - 1 : holding unless value.empty?
+          end
+        end.compact
     end
 
     def attribute_holding_from value

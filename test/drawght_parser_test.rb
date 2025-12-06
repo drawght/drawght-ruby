@@ -152,14 +152,24 @@ describe "drawght parser" do
       #         "Tests for objects",
       #         "Tests for lists",
       #       ],
-      #       "Tests" => {
-      #         "Unit" => [
-      #           { "Models" => [ "Person", "User" ],
-      #           { "Controllers" => [ "PersonController", "UserController", "AccessController" ] },
+      #     },
+      #   ],
+      #   "Tests" => {
+      #     "Unit" => [
+      #       {
+      #         "Models" => [
+      #           "Person",
+      #           "User"
       #         ]
-      #       }
-      #     }
-      #   ]
+      #       }, {
+      #         "Controllers" => [
+      #           "PersonController",
+      #           "UserController",
+      #           "AccessController"
+      #         ]
+      #       },
+      #     ]
+      #   }
       # }
 
       expectations = {
@@ -169,6 +179,15 @@ describe "drawght parser" do
             "Changelog#2.Version",
             "Changelog#2.Release",
           ],
+          sequential_placeholders: {},
+        },
+        '- {Name} v{Changelog#$.Version} - {Changelog#$.Release}' => {
+          straightly_placeholders: [
+            "Name",
+            'Changelog#$.Version',
+            'Changelog#$.Release',
+          ],
+          sequential_placeholders: {},
         },
         "- {Name} v{Changelog:Version} - {Changelog:Release}" => {
           straightly_placeholders: ["Name"],
@@ -187,6 +206,17 @@ describe "drawght parser" do
             "Tests:Unit" => {
               "Tests:Unit:Models" => "Models",
               "Tests:Unit:Controllers" => "Controllers",
+            },
+          }
+        },
+        "- v{Changelog:Version} > {Tests:Unit:Models*} {Tests:Unit:Controllers*}" => {
+          sequential_placeholders: {
+            "Changelog" => {
+              "Changelog:Version" => "Version",
+            },
+            "Tests:Unit" => {
+              "Tests:Unit:Models*" => "Models*",
+              "Tests:Unit:Controllers*" => "Controllers*",
             },
           }
         }
