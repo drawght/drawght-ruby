@@ -4,17 +4,17 @@
 module Drawght
   module Parser
     TOKENS = [
-      ATTRIBUTE = '.',
-      ITEM = '#',
-      SEQUENCER = ':',
-      CONJUNCTION = '&',
-      LAST_ITEM = '$',
-      LENGTH = '*',
+      ACCESSOR = '.',
+      INDEX = '#',
+      SCOPE = ':',
+      CONTEXT = '@',
+      LAST = '$',
+      LENGTH = '&',
     ]
 
-    STRAIGHTLY_PATTERN = Regexp.new "(\\#{ATTRIBUTE}|\\#{ITEM}|\\#{LENGTH})"
-    SEQUENTIAL_PATTERN = Regexp.new "(\\#{SEQUENCER})"
-    SEQUENCING_PATTERN = %r/^(.*)#{SEQUENTIAL_PATTERN}(.*)$/
+    STRUCTURE_TOKEN_PATTERN = Regexp.new "(\\#{ACCESSOR}|\\#{INDEX}|\\#{LENGTH}$)"
+    SCOPE_TOKEN_PATTERN = Regexp.new "(\\#{SCOPE})"
+    SCOPE_PATH_PATTERN = Regexp.new "^(.*)#{SCOPE_TOKEN_PATTERN}(.*)$"
 
     NUMBER_PATTERN = /^\d+/
 
@@ -22,9 +22,9 @@ module Drawght
 
     def pathkeys_from string
       path = case string
-        when STRAIGHTLY_PATTERN then
-          pathkeys_for_attribute string
-        when SEQUENTIAL_PATTERN then
+        when STRUCTURE_TOKEN_PATTERN then
+          pathkeys_for_structure string
+        when SCOPE_TOKEN_PATTERN then
           pathkeys_for_collection string
         else
           [string]
@@ -43,20 +43,20 @@ module Drawght
       clear_placeholder_mappings!
 
       placeholders_from(string).map do |placeholder|
-        if placeholder =~ SEQUENTIAL_PATTERN
-          placeholder.scan SEQUENCING_PATTERN do |pathkeys, _delimiter, attribute|
+        if placeholder =~ SCOPE_TOKEN_PATTERN
+          placeholder.scan SCOPE_PATH_PATTERN do |pathkeys, _delimiter, attribute|
             (sequential_placeholders[pathkeys] ||= {}).update placeholder => attribute
           end
         else
-          straightly_placeholders.add placeholder
+          structural_placeholders.add placeholder
         end
 
         placeholder
       end
     end
 
-    def straightly_placeholders
-      @straightly_placeholders ||= []
+    def structural_placeholders
+      @structural_placeholders ||= []
     end
 
     def sequential_placeholders
@@ -65,14 +65,14 @@ module Drawght
 
     private
 
-    def pathkeys_for_attribute placeholder
+    def pathkeys_for_structure placeholder
       placeholder
-        .split(STRAIGHTLY_PATTERN)
-        .reject{ |holding| [ATTRIBUTE, ITEM].include? holding }
+        .split(STRUCTURE_TOKEN_PATTERN)
+        .reject{ |holding| [ACCESSOR, INDEX].include? holding }
         .map do |holding|
           value = attribute_holding_from holding
 
-          if value =~ SEQUENTIAL_PATTERN
+          if value =~ SCOPE_TOKEN_PATTERN
             pathkeys_for_collection holding
           else
             value =~ NUMBER_PATTERN ? value.to_i - 1 : holding unless value.empty?
@@ -81,16 +81,16 @@ module Drawght
     end
 
     def attribute_holding_from value
-      value.to_s.sub LAST_ITEM, '0'
+      value.to_s.sub LAST, '0'
     end
 
     def pathkeys_for_collection placeholder
-      p = placeholder.split(SEQUENTIAL_PATTERN).map do |holding|
+      placeholder.split(SCOPE_TOKEN_PATTERN).map do |holding|
         case holding.to_s
-        when STRAIGHTLY_PATTERN then
-          pathkeys_for_attribute holding
-        when SEQUENCER then
-          CONJUNCTION
+        when STRUCTURE_TOKEN_PATTERN then
+          pathkeys_for_structure holding
+        when SCOPE then
+          CONTEXT
         else
           holding
         end
@@ -98,7 +98,7 @@ module Drawght
     end
 
     def clear_placeholder_mappings!
-      straightly_placeholders.clear && sequential_placeholders.clear
+      structural_placeholders.clear && sequential_placeholders.clear
     end
   end
 end

@@ -83,14 +83,22 @@ describe "drawght parser" do
 
       it "parses the nested syntax" do
         (0..9).each do |index|
-          expect(parser.pathkeys_from "Books##{index + 1}.Title").must_equal ["Books", index, "Title"]
+          expect(parser.pathkeys_from "Books##{index + 1}.Title").must_equal [
+            "Books", index, "Title"
+          ]
         end
 
-        expect(parser.pathkeys_from "Books:Title").must_equal ["Books", "&", "Title"]
+        expect(parser.pathkeys_from "Books:Title").must_equal [
+          "Books", Parser::CONTEXT, "Title"
+        ]
 
-        expect(parser.pathkeys_from "Series:Books:Title").must_equal %w[Series & Books & Title]
+        expect(parser.pathkeys_from "Series:Books:Title").must_equal [
+          "Series", Parser::CONTEXT, "Books", Parser::CONTEXT, "Title"
+        ]
 
-        expect(parser.pathkeys_from "Series#1.Books:Title").must_equal ["Series", 0, "Books", "&", "Title"]
+        expect(parser.pathkeys_from "Series#1.Books:Title").must_equal [
+          "Series", 0, "Books", Parser::CONTEXT, "Title"
+        ]
 
         (0..1).each do |serie|
           (0..1).each do |book|
@@ -107,8 +115,13 @@ describe "drawght parser" do
       end
 
       it "parses the collection size syntax" do
-        expect(parser.pathkeys_from "Changelog*").must_equal ["Changelog", "*"]
-        expect(parser.pathkeys_from "Changelog#1.Changes*").must_equal ["Changelog", 0, "Changes", "*"]
+        expect(parser.pathkeys_from "Changelog#&").must_equal [
+          "Changelog", Parser::LENGTH
+        ]
+
+        expect(parser.pathkeys_from "Changelog#1.Changes#&").must_equal [
+          "Changelog", 0, "Changes", Parser::LENGTH
+        ]
       end
     end
   end
@@ -174,7 +187,7 @@ describe "drawght parser" do
 
       expectations = {
         "{Name} v{Changelog#2.Version} ({Changelog#2.Release})" => {
-          straightly_placeholders: [
+          structural_placeholders: [
             "Name",
             "Changelog#2.Version",
             "Changelog#2.Release",
@@ -182,7 +195,7 @@ describe "drawght parser" do
           sequential_placeholders: {},
         },
         '- {Name} v{Changelog#$.Version} - {Changelog#$.Release}' => {
-          straightly_placeholders: [
+          structural_placeholders: [
             "Name",
             'Changelog#$.Version',
             'Changelog#$.Release',
@@ -190,7 +203,7 @@ describe "drawght parser" do
           sequential_placeholders: {},
         },
         "- {Name} v{Changelog:Version} - {Changelog:Release}" => {
-          straightly_placeholders: ["Name"],
+          structural_placeholders: ["Name"],
           sequential_placeholders: {
             "Changelog" => {
               "Changelog:Version" => "Version",
