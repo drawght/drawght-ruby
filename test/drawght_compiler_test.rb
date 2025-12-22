@@ -58,7 +58,7 @@ describe "drawght compiler" do
       end
     end
 
-    it "converts straightly items in a collection" do
+    it "converts structural items in a collection" do
       template = <<~end_text.lstrip
         Changelog for {Changelog#1.Version} released in {Changelog#1.Release}.
         Changes:
@@ -115,13 +115,19 @@ describe "drawght compiler" do
       end_text
     end
 
-    it 'converts dates' do
+    it "converts dates" do
       today = Date.today
       data = {
         Release: today
       }
 
       expect(compile "{Release}", data).must_equal "#{today}"
+    end
+
+    it "converts collection length" do
+      expect(compile "{Changelog#&}", dataset).must_equal dataset.dig("Changelog").size.to_s
+      expect(compile "{Tags#&}", dataset).must_equal dataset.dig("Tags").size.to_s
+      expect(compile "{Changelog#1.Changes#&}", dataset).must_equal dataset.dig("Changelog", 0, "Changes").size.to_s
     end
   end
 end
