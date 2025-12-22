@@ -2,8 +2,21 @@
 # frozen_string_literal: true
 
 module Drawght
+  module ArrayExtensions
+    refine Array do
+      def add_unique item
+        push item unless include? item
+        self
+      end
+    end
+  end
+
   module Parser
+    using ArrayExtensions
+
     TOKENS = [
+      PREFIX = '{',
+      SUFFIX = '}',
       ACCESSOR = '.',
       INDEX = '#',
       SCOPE = ':',
@@ -75,6 +88,7 @@ module Drawght
     # "struct.collection:noitcelloc.tcurts:attribute"
     VALIDATION_PATTERN = Regexp.new "^(?=.*[A-Za-z_\\#{INDEX}])(?:(?:#{ELEMENT_MATCHES}|#{INDEX_MATCHES})(?:#{ATTRIBUTE_MATCHES})*)?(?:\\#{SCOPE}(?:#{ELEMENT_MATCHES})(?:#{ATTRIBUTE_MATCHES})*)*(?:\\#{INDEX}\\#{LENGTH})?$"
 
+    PLACEHOLDERS_PATTERN = Regexp.new "\\#{PREFIX}([^\\#{SUFFIX}]+)\\#{SUFFIX}"
     STRUCTURE_TOKEN_PATTERN = Regexp.new "(\\#{ACCESSOR}|\\#{INDEX}|\\#{LENGTH}$)"
     SCOPE_TOKEN_PATTERN = Regexp.new "(\\#{SCOPE})"
     SCOPE_PATH_PATTERN = Regexp.new "^(.*)#{SCOPE_TOKEN_PATTERN}(.*)$"
@@ -138,36 +152,44 @@ module Drawght
       @sequential_placeholders ||= {}
     end
 
+    def has_placeholders? string
+      string.match? PLACEHOLDERS_PATTERN
+    end
+
+    def pathize string
+      "#{PREFIX}#{string}#{SUFFIX}"
+    end
+
     private
 
     def pathkeys_for_structure placeholder
       placeholder
         .split(STRUCTURE_TOKEN_PATTERN)
-        .reject{ |holding| [ACCESSOR, INDEX].include? holding }
-        .map do |holding|
-          value = attribute_holding_from holding
+        .reject{ |expression| [ACCESSOR, INDEX].include? expression }
+        .map do |expression|
+          value = zeroize expression
 
           if value =~ SCOPE_TOKEN_PATTERN
-            pathkeys_for_collection holding
+            pathkeys_for_collection expression
           else
-            value =~ NUMBER_PATTERN ? value.to_i - 1 : holding unless value.empty?
+            value =~ NUMBER_PATTERN ? value.to_i - 1 : expression unless value.empty?
           end
         end.compact
     end
 
-    def attribute_holding_from value
-      value.to_s.sub LAST, '0'
+    def zeroize value, token: LAST
+      value.to_s.sub token, '0'
     end
 
     def pathkeys_for_collection placeholder
-      placeholder.split(SCOPE_TOKEN_PATTERN).map do |holding|
-        case holding.to_s
+      placeholder.split(SCOPE_TOKEN_PATTERN).map do |expression|
+        case expression.to_s
         when STRUCTURE_TOKEN_PATTERN then
-          pathkeys_for_structure holding
+          pathkeys_for_structure expression
         when SCOPE then
           CONTEXT
         else
-          holding
+          expression
         end
       end
     end

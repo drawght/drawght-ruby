@@ -56,14 +56,4 @@ describe "drawght extensions" do
       end
     end
   end
-
-  describe "string extensions" do
-    using Drawght::StringExtensions
-
-    describe "#to_placeholder" do
-      it "applies the placeholder format" do
-        expect("name".to_placeholder).must_equal "{name}"
-      end
-    end
-  end
 end

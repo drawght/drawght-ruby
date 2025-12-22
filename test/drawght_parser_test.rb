@@ -237,6 +237,17 @@ describe "drawght parser" do
         expect(parser.placeholders_from template).must_equal expected
       end
     end
+
+    it "checks placeholders" do
+      expect(parser.has_placeholders? "#{Parser::PREFIX}placeholder#{Parser::SUFFIX}").must_equal true
+      expect(parser.has_placeholders? "placeholder#{Parser::SUFFIX}").must_equal false
+      expect(parser.has_placeholders? "#{Parser::PREFIX}placeholder").must_equal false
+      expect(parser.has_placeholders? "placeholder").must_equal false
+    end
+
+    it "wraps a string as path" do
+      expect(parser.pathize "identifier").must_equal "#{Parser::PREFIX}identifier#{Parser::SUFFIX}"
+    end
   end
 
   describe "when mapping placeholders" do

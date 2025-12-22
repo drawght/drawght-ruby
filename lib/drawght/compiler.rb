@@ -3,8 +3,28 @@
 
 module Drawght
 
+module HashExtensions
+  refine Hash do
+    def deep_stringify_keys!
+      transform_keys! do |key|
+        case value = fetch(key)
+        when Hash then value.deep_stringify_keys!
+        when Array then
+          value.map! do |item|
+            (item.is_a? Hash) ? item.deep_stringify_keys! : item
+          end
+        end
+
+        key.to_s
+      end
+
+      self
+    end
+  end
+end
+
 class Compiler
-  using AllExtensions
+  using HashExtensions
 
   include Parser
   include Tracker
@@ -31,7 +51,7 @@ class Compiler
 
   def convert
     lines = template.lines.map do |line|
-      next line unless line.match? PLACEHOLDERS_PATTERN
+      next line unless has_placeholders? line
 
       mapping_placeholders_from line
 
@@ -44,11 +64,11 @@ class Compiler
   end
 
   def convert_structural_placeholders_from string
-    structural_placeholders.reduce string.dup do |template, holding|
-      matter = pathing dataset, *pathkeys_from(holding)
+    structural_placeholders.reduce string.dup do |template, expression|
+      matter = pathing dataset, *pathkeys_from(expression)
 
       converted = [matter].flatten.map do |value|
-        template.dup.gsub! holding.to_placeholder, value.to_s
+        template.dup.gsub! pathize(expression), value.to_s
       end
 
       template.replace converted.join
@@ -60,9 +80,9 @@ class Compiler
       matter = pathing dataset, *pathkeys_from(attribute)
 
       converted = matter.map do |values|
-        mappings.inject template.dup do |partial, (holding, key)|
+        mappings.inject template.dup do |partial, (expression, key)|
           value = pathing(values, *pathkeys_from(key)) || key
-          partial.dup.gsub! holding.to_placeholder, value.to_s
+          partial.dup.gsub! pathize(expression), value.to_s
         end
       end
 
