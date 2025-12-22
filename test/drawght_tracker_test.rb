@@ -44,7 +44,7 @@ describe "drawght tracker" do
         ]
       }
 
-      it "fetches value through a straightly path" do
+      it "fetches value through a structural path" do
         expect(tracker.pathing dataset, "author", "name").must_equal "Isaac Asimov"
         expect(tracker.pathing dataset, "author", "birhtdate").must_equal "1920-01-02"
       end
@@ -52,7 +52,7 @@ describe "drawght tracker" do
       it "fetches value through a sequential path" do
         expected = dataset["series"].map{ |serie| serie["name"] }
 
-        expect(tracker.pathing dataset, "series", '&', "name").must_equal expected
+        expect(tracker.pathing dataset, "series", Tracker::CONTEXT, "name").must_equal expected
 
         dataset.dig("series", 0, "books").each_with_index do |book, index|
           expect(tracker.pathing dataset, "series", 0, "books", index, "title").must_equal book["title"]
@@ -60,13 +60,13 @@ describe "drawght tracker" do
 
         expected = dataset.dig("series", 0, "books").map{ |book| book["title"] }
 
-        expect(tracker.pathing dataset, "series", 0, "books", '&', "title").must_equal expected
+        expect(tracker.pathing dataset, "series", 0, "books", Tracker::CONTEXT, "title").must_equal expected
 
         expected = dataset["series"].map do |serie|
           serie["books"].map{ |book| book["title"] }
         end
 
-        expect(tracker.pathing dataset, "series", '&', "books", '&', "title").must_equal expected
+        expect(tracker.pathing dataset, "series", Tracker::CONTEXT, "books", Tracker::CONTEXT, "title").must_equal expected
 
         nested_dataset = {
           "series" => {
@@ -85,11 +85,22 @@ describe "drawght tracker" do
         }
         expected = nested_dataset.dig("series", "books").map{ |books| books.dig("book", "title") }
 
-        expect(tracker.pathing nested_dataset, "series", "books", '&', "book", "title").must_equal expected
+        expect(tracker.pathing nested_dataset, "series", "books", Tracker::CONTEXT, "book", "title").must_equal expected
       end
 
       it "raises error when uses invalid path" do
         expect{ tracker.pathing nested_dataset, "series", '&', "books", '&', "book", "title" }.must_raise StandardError
+        expect{ tracker.pathing nested_dataset, "series", '&', "nonexists", "title" }.must_raise StandardError
+      end
+
+      it "fetches collection length" do
+        expect(tracker.pathing dataset, "series", Tracker::LENGTH).must_equal dataset.dig("series").size
+
+        expect(tracker.pathing dataset, "series", 0, "books", Tracker::LENGTH).must_equal dataset.dig("series", 0, "books").size
+
+        expected = dataset.dig("series").map{ |serie| serie.dig "books" }.flatten.size
+
+        expect(tracker.pathing dataset, "series", Tracker::CONTEXT, "books", Tracker::LENGTH).must_equal expected
       end
     end
   end
