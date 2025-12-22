@@ -40,6 +40,6 @@ module Commands
 end
 
 if __FILE__ == $PROGRAM_NAME
-  command = ARGV.shift.to_sym
+  command = ARGV.shift&.to_sym
   Commands.send command, *ARGV if Commands.methods(false).include? command
 end
