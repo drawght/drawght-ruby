@@ -42,6 +42,103 @@ describe "drawght parser" do
   #   ]
   # }
 
+  describe "when parsing syntax" do
+    syntax_validations = {
+      structural: {
+        "name" => true,
+        "_name" => true,
+        "variable name" => true,
+        "variable-name" => true,
+        "_variable _name" => true,
+        "_variable-_name" => true,
+        "#1" => true,
+        "#1001" => true,
+        '#$' => true,
+        "items#1" => true,
+        "items#1001" => true,
+        'items#$' => true,
+        "items#&" => true,
+        '#1#$' => false,
+        '#$#1' => false,
+        "struct.attribute" => true,
+        "struct.attribute.field.property" => true,
+        "_struct._attribute" => true,
+        "struct name.attribute" => true,
+        "struct-name.attribute" => true,
+        "struct.attribute name" => true,
+        "struct.attribute-name" => true,
+        "struct.items#1" => true,
+        "struct.items#101" => true,
+        'struct.items#$' => true,
+        "struct.items#&" => true,
+        "struct .attribute" => false,
+        "struct. attribute" => false,
+        "#1.name" => true,
+        '#1.attribute-name' => true,
+        '#1.attribute name' => true,
+        '#$.name' => true,
+        '#$.attribute name' => true,
+        '#$.attribute-name' => true,
+        "items#1.subitems#1.attribute" => true,
+        "items#2.subitems#1.attributes#1.name" => true,
+        "items#1.attribute" => true,
+        'items#$.attribute' => true,
+        "items#1#2.attribute" => false,
+        "items*" => false,
+        "items*subitems*" => false,
+        ".name" => false,
+        "name." => false,
+        "struct..attribute" => false,
+        "items**" => false,
+        "struct.:attribute" => false,
+        "items.$" => false,
+      },
+      sequential: {
+        ":attribute" => true,
+        ":collection:attribute" => true,
+        ":items#1" => true,
+        ":items#1001" => true,
+        ":items#1.attribute" => true,
+        ":items*" => false,
+        ":items#&" => true,
+        "::attribute" => false,
+        "collection:attribute" => true,
+        "items:collection:attribute" => true,
+        "another items:collection:attribute" => true,
+        "another-items:collection:attribute" => true,
+        "items#1.collection:attribute" => true,
+        "this.is.valid:to.get.value" => true,
+        "struct.collection:noitcelloc.tcurts:attribute" => true,
+        "items:subitems#&" => true,
+        "items:subitems*" => false,
+        "items*:attribute" => false,
+        "items::attribute" => false,
+        "items:" => false,
+        "items:*" => false,
+        "items:#1" => false,
+        'items:#$' => false,
+        'items:#&' => false,
+        'items$:' => false,
+      },
+      errors: {
+        "" => false,
+        " " => false,
+        "." => false,
+        "#" => false,
+        ":" => false,
+        "*" => false,
+      }
+    }
+
+    %i[structural sequential errors].each do |mode|
+      it "validates #{mode} path syntax" do
+        for (template, expected) in syntax_validations[mode]
+          expect(parser.syntax_valid? template).must_equal expected, "#{template} => #{Regexp.last_match&.names}"
+        end
+      end
+    end
+  end
+
   describe "when parsing path keys" do
     it "parses the variable syntax path" do
       templates = [
