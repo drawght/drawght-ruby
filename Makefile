@@ -38,6 +38,6 @@ package: versioning
 	$(gem) build
 
 release: package
-#?$ make release
+#?$ make release <gemfile=GEMFILE>
 #?  Packages and pushes the Gem file to the RubyGems server.
-	$(gem) push
+	$(gem) push ${gemfile}
