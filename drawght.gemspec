@@ -2,7 +2,7 @@ require_relative "lib/drawght/version"
 
 Gem::Specification.new do |spec|
   spec.name = "drawght"
-  spec.summary = "Drawght parser implementation in Ruby."
+  spec.summary = "Drawght implementation in Ruby."
   spec.authors = ["Hallison Batista"]
   spec.email = "email@hallison.dev.br"
   spec.homepage = "https://drawght.github.io"

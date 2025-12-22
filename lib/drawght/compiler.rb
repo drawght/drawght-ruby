@@ -3,10 +3,31 @@
 
 module Drawght
 
+module HashExtensions
+  refine Hash do
+    def deep_stringify_keys!
+      transform_keys! do |key|
+        case value = fetch(key)
+        when Hash then value.deep_stringify_keys!
+        when Array then
+          value.map! do |item|
+            (item.is_a? Hash) ? item.deep_stringify_keys! : item
+          end
+        end
+
+        key.to_s
+      end
+
+      self
+    end
+  end
+end
+
 class Compiler
-  using Extensions
+  using HashExtensions
 
   include Parser
+  include Tracker
 
   attr_reader :template, :dataset, :result
 
@@ -30,11 +51,11 @@ class Compiler
 
   def convert
     lines = template.lines.map do |line|
-      next line unless line.match? PLACEHOLDERS_PATTERN
+      next line unless has_placeholders? line
 
       mapping_placeholders_from line
 
-      newline = convert_straightly_placeholders_from line
+      newline = convert_structural_placeholders_from line
 
       convert_sequential_placeholders_from newline
     end
@@ -42,12 +63,12 @@ class Compiler
     result.replace lines.join
   end
 
-  def convert_straightly_placeholders_from string
-    straightly_placeholders.reduce string.dup do |template, holding|
-      matter = dataset.ditch *pathkeys_from(holding)
+  def convert_structural_placeholders_from string
+    structural_placeholders.reduce string.dup do |template, expression|
+      matter = pathing dataset, *pathkeys_from(expression)
 
       converted = [matter].flatten.map do |value|
-        template.dup.gsub! holding.to_placeholder, value.to_s
+        template.dup.gsub! pathize(expression), value.to_s
       end
 
       template.replace converted.join
@@ -56,12 +77,12 @@ class Compiler
 
   def convert_sequential_placeholders_from string
     sequential_placeholders.reduce string.dup do |template, (attribute, mappings)|
-      matter = dataset.ditch *pathkeys_from(attribute)
+      matter = pathing dataset, *pathkeys_from(attribute)
 
       converted = matter.map do |values|
-        mappings.inject template.dup do |partial, (holding, key)|
-          value = values.ditch(*pathkeys_from(key)) || key
-          partial.dup.gsub! holding.to_placeholder, value.to_s
+        mappings.inject template.dup do |partial, (expression, key)|
+          value = pathing(values, *pathkeys_from(key)) || key
+          partial.dup.gsub! pathize(expression), value.to_s
         end
       end
 

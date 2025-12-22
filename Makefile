@@ -10,7 +10,7 @@ grep = $(shell command -v grep)
 cut = $(shell command -v cut)
 git = $(shell command -v git)
 ruby = $(shell command -v ruby)
-ruby.run = $(ruby) -Ilib run.rb
+ruby.run = $(ruby) run.rb
 gem = $(shell command -v gem)
 
 # Variables
@@ -18,7 +18,7 @@ file =
 
 help:
 #?$ make help
-#?  	Show this message to help use.
+#?  Show this message to help use.
 	$(grep) -e '^#?' Makefile | $(cut) -c3-
 
 test:

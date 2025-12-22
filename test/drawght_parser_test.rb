@@ -5,6 +5,10 @@ describe "drawght parser" do
     include Drawght::Parser
   end
 
+  def parser
+    @parser ||= Parser.new
+  end
+
   # dataset = {
   #   "Author" => {
   #     "Name" => "Isaac Asimov",
@@ -38,29 +42,104 @@ describe "drawght parser" do
   #   ]
   # }
 
-  def parser
-    @parser ||= Parser.new
-  end
+  describe "when parsing syntax" do
+    syntax_validations = {
+      structural: {
+        "name" => true,
+        "_name" => true,
+        "variable name" => true,
+        "variable-name" => true,
+        "_variable _name" => true,
+        "_variable-_name" => true,
+        "#1" => true,
+        "#1001" => true,
+        '#$' => true,
+        "items#1" => true,
+        "items#1001" => true,
+        'items#$' => true,
+        "items#&" => true,
+        '#1#$' => false,
+        '#$#1' => false,
+        "struct.attribute" => true,
+        "struct.attribute.field.property" => true,
+        "_struct._attribute" => true,
+        "struct name.attribute" => true,
+        "struct-name.attribute" => true,
+        "struct.attribute name" => true,
+        "struct.attribute-name" => true,
+        "struct.items#1" => true,
+        "struct.items#101" => true,
+        'struct.items#$' => true,
+        "struct.items#&" => true,
+        "struct .attribute" => false,
+        "struct. attribute" => false,
+        "#1.name" => true,
+        '#1.attribute-name' => true,
+        '#1.attribute name' => true,
+        '#$.name' => true,
+        '#$.attribute name' => true,
+        '#$.attribute-name' => true,
+        "items#1.subitems#1.attribute" => true,
+        "items#2.subitems#1.attributes#1.name" => true,
+        "items#1.attribute" => true,
+        'items#$.attribute' => true,
+        "items#1#2.attribute" => false,
+        "items*" => false,
+        "items*subitems*" => false,
+        ".name" => false,
+        "name." => false,
+        "struct..attribute" => false,
+        "items**" => false,
+        "struct.:attribute" => false,
+        "items.$" => false,
+      },
+      sequential: {
+        ":attribute" => true,
+        ":collection:attribute" => true,
+        ":items#1" => true,
+        ":items#1001" => true,
+        ":items#1.attribute" => true,
+        ":items*" => false,
+        ":items#&" => true,
+        "::attribute" => false,
+        "collection:attribute" => true,
+        "items:collection:attribute" => true,
+        "another items:collection:attribute" => true,
+        "another-items:collection:attribute" => true,
+        "items#1.collection:attribute" => true,
+        "this.is.valid:to.get.value" => true,
+        "struct.collection:noitcelloc.tcurts:attribute" => true,
+        "items:subitems#&" => true,
+        "items:subitems*" => false,
+        "items*:attribute" => false,
+        "items::attribute" => false,
+        "items:" => false,
+        "items:*" => false,
+        "items:#1" => false,
+        'items:#$' => false,
+        'items:#&' => false,
+        'items$:' => false,
+      },
+      errors: {
+        "" => false,
+        " " => false,
+        "." => false,
+        "#" => false,
+        ":" => false,
+        "*" => false,
+      }
+    }
 
-  def expect_path_keys(from:, must_equal:)
-    result = parser.pathkeys_from from
-    expect(result).must_equal must_equal
-  end
-
-  def expect_placeholders(from:, must_equal:)
-    result = parser.placeholders_from from
-    expect(result).must_equal must_equal
-  end
-
-  def expect_placeholders_mapping(from:, must_equal:)
-    parser.mapping_placeholders_from from
-
-    must_equal.each do |navigation, placeholders|
-      expect(parser.send navigation).must_equal placeholders
+    %i[structural sequential errors].each do |mode|
+      it "validates #{mode} path syntax" do
+        for (template, expected) in syntax_validations[mode]
+          expect(parser.syntax_valid? template).must_equal expected, "#{template} => #{Regexp.last_match&.names}"
+        end
+      end
     end
   end
 
-  describe "when parses path keys" do
+  describe "when parsing path keys" do
     it "parses the variable syntax path" do
       templates = [
         "author",
@@ -69,7 +148,7 @@ describe "drawght parser" do
       ]
 
       for template in templates
-        expect_path_keys from: template, must_equal: [template]
+        expect(parser.pathkeys_from template).must_equal [template]
       end
     end
 
@@ -81,46 +160,70 @@ describe "drawght parser" do
       }
 
       for (template, expected) in expectations
-        expect_path_keys from: template, must_equal: expected
+        expect(parser.pathkeys_from template).must_equal expected
       end
     end
 
-    it "parses the main collection syntax path" do
-      (0..9).each do |index|
-        expect_path_keys from: "##{index + 1}", must_equal: [index]
-        expect_path_keys from: "##{index + 1}.Title", must_equal: [index, "Title"]
-      end
-    end
-
-    it "parses the attribute collection syntax path" do
-      (0..9).each do |index|
-        expect_path_keys from: "Books##{index + 1}", must_equal: ["Books", index]
-      end
-    end
-
-    it "parses the nested collection syntax path" do
-      (0..9).each do |index|
-        expect_path_keys from: "Books##{index + 1}.Title", must_equal: ["Books", index, "Title"]
-      end
-
-      expect_path_keys from: "Books:Title", must_equal: ["Books", "&", "Title"]
-
-      expect_path_keys from: "Series:Books:Title", must_equal: %w[Series & Books & Title]
-
-      expect_path_keys from: "Series#1.Books:Title", must_equal: ["Series", 0, "Books", "&", "Title"]
-
-      (0..1).each do |serie|
-        (0..1).each do |book|
-          expect_path_keys **{
-            from: "Series##{serie + 1}.Books##{book + 1}.Title",
-            must_equal: ["Series", serie, "Books", book, "Title"]
-          }
+    describe "when parsing collection syntax" do
+      it "parses the main syntax" do
+        (0..9).each do |index|
+          expect(parser.pathkeys_from "##{index + 1}").must_equal [index]
+          expect(parser.pathkeys_from "##{index + 1}.Title").must_equal [index, "Title"]
         end
+      end
+
+      it "parses the attribute syntax" do
+        (0..9).each do |index|
+          expect(parser.pathkeys_from "Books##{index + 1}").must_equal ["Books", index]
+        end
+      end
+
+      it "parses the nested syntax" do
+        (0..9).each do |index|
+          expect(parser.pathkeys_from "Books##{index + 1}.Title").must_equal [
+            "Books", index, "Title"
+          ]
+        end
+
+        expect(parser.pathkeys_from "Books:Title").must_equal [
+          "Books", Parser::CONTEXT, "Title"
+        ]
+
+        expect(parser.pathkeys_from "Series:Books:Title").must_equal [
+          "Series", Parser::CONTEXT, "Books", Parser::CONTEXT, "Title"
+        ]
+
+        expect(parser.pathkeys_from "Series#1.Books:Title").must_equal [
+          "Series", 0, "Books", Parser::CONTEXT, "Title"
+        ]
+
+        (0..1).each do |serie|
+          (0..1).each do |book|
+            template = "Series##{serie + 1}.Books##{book + 1}.Title"
+            expected = ["Series", serie, "Books", book, "Title"]
+            expect(parser.pathkeys_from template).must_equal expected
+          end
+        end
+      end
+
+      it "parses the last item syntax" do
+        expect(parser.pathkeys_from 'Changelog#$.Version').must_equal ["Changelog", -1, "Version"]
+        expect(parser.pathkeys_from "Changelog#0.Version").must_equal ["Changelog", -1, "Version"]
+      end
+
+      it "parses the collection size syntax" do
+        expect(parser.pathkeys_from "Changelog#&").must_equal [
+          "Changelog", Parser::LENGTH
+        ]
+
+        expect(parser.pathkeys_from "Changelog#1.Changes#&").must_equal [
+          "Changelog", 0, "Changes", Parser::LENGTH
+        ]
       end
     end
   end
 
-  describe "when parses placeholders" do
+  describe "when parsing placeholders" do
     it "gets all placeholders from text" do
       expectations = {
         "The {author.name} has {author.age} years old" => %w[author.name author.age],
@@ -131,8 +234,19 @@ describe "drawght parser" do
       }
 
       for (template, expected) in expectations
-        expect_placeholders from: template, must_equal: expected
+        expect(parser.placeholders_from template).must_equal expected
       end
+    end
+
+    it "checks placeholders" do
+      expect(parser.has_placeholders? "#{Parser::PREFIX}placeholder#{Parser::SUFFIX}").must_equal true
+      expect(parser.has_placeholders? "placeholder#{Parser::SUFFIX}").must_equal false
+      expect(parser.has_placeholders? "#{Parser::PREFIX}placeholder").must_equal false
+      expect(parser.has_placeholders? "placeholder").must_equal false
+    end
+
+    it "wraps a string as path" do
+      expect(parser.pathize "identifier").must_equal "#{Parser::PREFIX}identifier#{Parser::SUFFIX}"
     end
   end
 
@@ -159,26 +273,45 @@ describe "drawght parser" do
       #         "Tests for objects",
       #         "Tests for lists",
       #       ],
-      #       "Tests" => {
-      #         "Unit" => [
-      #           { "Models" => [ "Person", "User" ],
-      #           { "Controllers" => [ "PersonController", "UserController", "AccessController" ] },
+      #     },
+      #   ],
+      #   "Tests" => {
+      #     "Unit" => [
+      #       {
+      #         "Models" => [
+      #           "Person",
+      #           "User"
       #         ]
-      #       }
-      #     }
-      #   ]
+      #       }, {
+      #         "Controllers" => [
+      #           "PersonController",
+      #           "UserController",
+      #           "AccessController"
+      #         ]
+      #       },
+      #     ]
+      #   }
       # }
 
       expectations = {
         "{Name} v{Changelog#2.Version} ({Changelog#2.Release})" => {
-          straightly_placeholders: [
+          structural_placeholders: [
             "Name",
             "Changelog#2.Version",
             "Changelog#2.Release",
           ],
+          sequential_placeholders: {},
+        },
+        '- {Name} v{Changelog#$.Version} - {Changelog#$.Release}' => {
+          structural_placeholders: [
+            "Name",
+            'Changelog#$.Version',
+            'Changelog#$.Release',
+          ],
+          sequential_placeholders: {},
         },
         "- {Name} v{Changelog:Version} - {Changelog:Release}" => {
-          straightly_placeholders: ["Name"],
+          structural_placeholders: ["Name"],
           sequential_placeholders: {
             "Changelog" => {
               "Changelog:Version" => "Version",
@@ -196,11 +329,26 @@ describe "drawght parser" do
               "Tests:Unit:Controllers" => "Controllers",
             },
           }
+        },
+        "- v{Changelog:Version} > {Tests:Unit:Models*} {Tests:Unit:Controllers*}" => {
+          sequential_placeholders: {
+            "Changelog" => {
+              "Changelog:Version" => "Version",
+            },
+            "Tests:Unit" => {
+              "Tests:Unit:Models*" => "Models*",
+              "Tests:Unit:Controllers*" => "Controllers*",
+            },
+          }
         }
       }
 
       for (template, expected) in expectations
-        expect_placeholders_mapping from: template, must_equal: expected
+        parser.mapping_placeholders_from template
+
+        expected.each do |navigation, placeholders|
+          expect(parser.send navigation).must_equal placeholders
+        end
       end
     end
   end

@@ -15,6 +15,7 @@ module Commands
 
   def self.test file = nil
     require "minitest/autorun"
+    require "pry-byebug"
     require_relative "#{__dir__}/lib/drawght"
 
     filename_pattern = file || "#{__dir__}/test/*_test.rb"

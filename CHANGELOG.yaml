@@ -1,3 +1,12 @@
+- version: 1.1.0
+  date: 2025-12-22
+  summary:
+    Syntax validation and new expression.
+  changes:
+  - Syntax validation.
+  - Refined extension methods have been moved to their respective modules.
+  - Syntax for getting the length of a collection.
+
 - version: 1.0.0
   date: 2025-12-03
   summary:
