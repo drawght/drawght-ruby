@@ -196,22 +196,63 @@ puts result
 
 Drawght has a simple syntax:
 
-- `{key}`: converts `key` to its respective value. If the value is a
-  collection, then the row will be replicated and converted with the respective
-  values. 
+- `{identifier}`: converts `identifier` to its respective value. If the value
+  is a collection, then the row will be replicated and converted with the
+  respective values.
 
-- `{object.key}`: converts `key` to its respective value inside `object`,
-  assuming the same behavior as `{key}`. 
+- `{structure.attribute}`: converts `attribute` to its respective value inside
+  `structure`, assuming the same behavior as `{identifier}`.
 
-- `{collection:key}`: selects `collection`, replicates the line for each item
-  in the collection, and converts `key` to its respective value contained in an
-  object within `collection`. The `collection` key can also be accessed by
-  `object.collection`, just as `key` can also be accessed by `object.key` which
-  will be converted following the same process in case it is a collection. 
+- `{collection:attribute}`: selects `collection`, replicates the line for each
+  item in the collection, and converts `attribute` to its respective value
+  contained in an structure within `collection`. The `collection` key can also
+  be accessed by `structure.collection`, just as `attribute` can also be
+  accessed by `structure.attribute` which will be converted following the same
+  process in case it is a collection.
 
-- `{collection#n.key}`: selects item object `n` (from 1) from `collection` and
-  converts `key` to its respective value. The whole process is similar to
-  `object.key`. 
+- `{collection#nth.attribute}`: selects the `nth` (start from 1) item from
+  `collection` and converts `attribute` to its respective value. The whole
+  process is similar to `structure.attribute`.
+
+- `{collection#$.attribute}`: selects the `nth` (start from 1) item from
+  `collection` and converts `attribute` to its respective value. The whole
+  process is similar to `structure.attribute`.
+
+### EBNF
+
+```ebnf
+identifier ::= initial_name { compound_name | space compound_name } ;
+
+initial_name ::= letter | "_" ;
+
+compound_name ::= letter | digit | "_" | "-" ;
+
+letter ::= "A"…"Z" | "a"…"z" ;
+
+digit ::= "0"…"9" ;
+
+space ::= " " ;
+
+expression ::= path [ length ] ;
+
+path ::= [ structural_path ] { sequential_path } ;
+
+structural_path ::= attribute { "." attribute } ;
+
+scoped_path ::= ":" structural_path ;
+
+attribute ::= element | item ;
+
+element ::= identifier [ index ] ;
+
+item ::= index ;
+
+index ::= "#" ( number | "$" ) ;
+
+number ::= digit { digit } ;
+
+length ::= "#&" ;
+```
 
 ## How it works
 
