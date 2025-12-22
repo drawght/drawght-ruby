@@ -123,7 +123,7 @@ module Drawght
             (sequential_placeholders[pathkeys] ||= {}).update placeholder => attribute
           end
         else
-          structural_placeholders.add placeholder
+          structural_placeholders.add_unique placeholder
         end
 
         placeholder

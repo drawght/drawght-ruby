@@ -41,16 +41,16 @@ describe "drawght extensions" do
   describe "array extensions" do
     using Drawght::ArrayExtensions
 
-    describe "#add" do
+    describe "#add_unique" do
       it "adds unique item" do
         list = %w[a b c d e]
 
         for item in list
-          expect(list.add item).must_equal list
+          expect(list.add_unique item).must_equal list
         end
 
         list_size = list.size
-        list.add 'f'
+        list.add_unique 'f'
 
         expect(list.size).must_equal list_size + 1
       end

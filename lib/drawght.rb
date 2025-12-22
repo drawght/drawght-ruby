@@ -31,7 +31,7 @@ module Drawght
 
   module ArrayExtensions
     refine Array do
-      def add item
+      def add_unique item
         push item unless include? item
         self
       end
